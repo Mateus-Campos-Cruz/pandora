@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createHashRouter, Navigate } from 'react-router-dom';
 import AppLayout from '../components/layout/AppLayout';
 import ProtectedRoute from '../components/layout/ProtectedRoute';
 
@@ -13,7 +13,7 @@ import MenuPage        from '../pages/Menu';
 import HistoryPage     from '../pages/History';
 import UsersPage       from '../pages/Users';
 
-const router = createBrowserRouter([
+const router = createHashRouter([
   {
     path: '/login',
     element: <LoginPage />,
