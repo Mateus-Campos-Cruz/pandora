@@ -8,41 +8,41 @@
 /* ── Design Tokens ─────────────────────────────────────────── */
 :root {
   /* Cores Base */
-  --bg:           #0d0d14;
-  --bg-2:         #12121c;
-  --surface:      #1a1a28;
-  --surface-2:    #22223a;
-  --border:       rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.18);
+  --bg:           #FFFFFF;
+  --bg-2:         #3E1F00;
+  --surface:      #FDF6EC;
+  --surface-2:    #F7EFE3;
+  --border:       rgba(123, 63, 0, 0.12);
+  --border-hover: rgba(123, 63, 0, 0.24);
 
   /* Marca */
-  --primary:      #7c6fff;
-  --primary-dim:  rgba(124, 111, 255, 0.15);
-  --primary-glow: rgba(124, 111, 255, 0.4);
+  --primary:      #F5A623;
+  --primary-dim:  rgba(245, 166, 35, 0.12);
+  --primary-glow: rgba(245, 166, 35, 0.3);
 
   /* Tipos de Pedido */
-  --salao:        #3b82f6;
-  --salao-dim:    rgba(59, 130, 246, 0.15);
-  --delivery:     #f97316;
-  --delivery-dim: rgba(249, 115, 22, 0.15);
+  --salao:        #7B3F00;
+  --salao-dim:    rgba(123, 63, 0, 0.1);
+  --delivery:     #F5A623;
+  --delivery-dim: rgba(245, 166, 35, 0.1);
 
   /* Status */
-  --recebido:   #6366f1;
-  --em-preparo: #f59e0b;
-  --pronto:     #22c55e;
-  --entregue:   #3b82f6;
-  --encerrado:  #6b7280;
+  --recebido:   #7B3F00;
+  --em-preparo: #F5A623;
+  --pronto:     #2ecc71;
+  --entregue:   #3498db;
+  --encerrado:  #95a5a6;
 
   /* Semânticos */
-  --success:    #22c55e;
-  --warning:    #f59e0b;
-  --danger:     #ef4444;
-  --info:       #38bdf8;
+  --success:    #27ae60;
+  --warning:    #d35400;
+  --danger:     #c0392b;
+  --info:       #2980b9;
 
   /* Texto */
-  --text:       #f1f1f5;
-  --text-muted: #9898b0;
-  --text-dim:   #5a5a78;
+  --text:       #1C0A00;
+  --text-muted: #967155;
+  --text-dim:   #bda28c;
 
   /* Espaçamento */
   --radius-sm:  6px;
@@ -51,9 +51,9 @@
   --radius-xl:  24px;
 
   /* Sombras */
-  --shadow-sm:  0 2px 8px rgba(0,0,0,0.4);
-  --shadow:     0 4px 20px rgba(0,0,0,0.5);
-  --shadow-lg:  0 8px 40px rgba(0,0,0,0.6);
+  --shadow-sm:  0 2px 8px rgba(62, 31, 0, 0.05);
+  --shadow:     0 4px 20px rgba(62, 31, 0, 0.08);
+  --shadow-lg:  0 8px 40px rgba(62, 31, 0, 0.12);
   --glow:       0 0 24px var(--primary-glow);
 
   /* Transições */
@@ -127,17 +127,18 @@ ul, ol { list-style: none; }
   flex-direction: column;
   z-index: 100;
   overflow-y: auto;
+  color: #FDF6EC;
 }
 
 .sidebar-logo {
   padding: 24px 20px 20px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-logo h1 {
   font-size: 20px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), #a78bfa);
+  background: linear-gradient(135deg, var(--primary), #ffffff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -145,7 +146,7 @@ ul, ol { list-style: none; }
 
 .sidebar-logo p {
   font-size: 11px;
-  color: var(--text-muted);
+  color: rgba(253, 246, 236, 0.7);
   margin-top: 2px;
   font-weight: 500;
 }
@@ -164,7 +165,7 @@ ul, ol { list-style: none; }
   gap: 10px;
   padding: 10px 12px;
   border-radius: var(--radius);
-  color: var(--text-muted);
+  color: rgba(253, 246, 236, 0.75);
   font-size: 14px;
   font-weight: 500;
   transition: all var(--transition);
@@ -173,13 +174,14 @@ ul, ol { list-style: none; }
 }
 
 .sidebar-nav-item:hover {
-  background: var(--surface);
-  color: var(--text);
+  background: rgba(255, 255, 255, 0.08);
+  color: #ffffff;
 }
 
 .sidebar-nav-item.active {
-  background: var(--primary-dim);
-  color: var(--primary);
+  background: var(--primary);
+  color: #1C0A00;
+  font-weight: 600;
 }
 
 .sidebar-nav-item .nav-icon {
@@ -191,7 +193,7 @@ ul, ol { list-style: none; }
 
 .sidebar-footer {
   padding: 16px 10px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-user {
@@ -200,7 +202,12 @@ ul, ol { list-style: none; }
   gap: 10px;
   padding: 10px 12px;
   border-radius: var(--radius);
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.08);
+  color: #FFFFFF;
+}
+
+.sidebar-user-role {
+  color: rgba(253, 246, 236, 0.6) !important;
 }
 
 .sidebar-user-avatar {
@@ -385,7 +392,7 @@ ul, ol { list-style: none; }
 .form-input,
 .form-select,
 .form-textarea {
-  background: var(--bg-2);
+  background: #FFFFFF;
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 10px 14px;
@@ -580,8 +587,8 @@ tbody td {
   justify-content: center;
   padding: 20px;
   background:
-    radial-gradient(ellipse at 20% 20%, rgba(124,111,255,0.12) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 80%, rgba(249,115,22,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 20%, rgba(245, 166, 35, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(123, 63, 0, 0.08) 0%, transparent 50%),
     var(--bg);
 }
 
@@ -603,7 +610,7 @@ tbody td {
 .login-logo h1 {
   font-size: 28px;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), #a78bfa, #f9a8d4);
+  background: linear-gradient(135deg, var(--primary), var(--bg-2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
