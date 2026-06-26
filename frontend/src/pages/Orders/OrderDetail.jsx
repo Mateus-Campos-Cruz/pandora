@@ -201,29 +201,30 @@ export default function OrderDetailPage() {
                 key={item.id}
                 style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
-                  padding: '12px 14px', background: 'var(--bg-2)',
+                  padding: '12px 14px', background: '#F5A623',
                   borderRadius: 'var(--radius)', border: '1px solid var(--border)',
+                  color: '#000000',
                   opacity: item.is_cancelled ? 0.4 : 1,
                 }}
                 id={`item-row-${item.id}`}
               >
-                <span style={{ fontWeight: '800', color: 'var(--primary)', minWidth: '28px', fontSize: '16px' }}>
+                <span style={{ fontWeight: '800', color: '#000000', minWidth: '28px', fontSize: '16px' }}>
                   {item.quantity}×
                 </span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontWeight: '600', fontSize: '14px', textDecoration: item.is_cancelled ? 'line-through' : 'none' }}>
+                  <div style={{ fontWeight: '600', fontSize: '14px', color: '#000000', textDecoration: item.is_cancelled ? 'line-through' : 'none' }}>
                     {item.item_name}
                   </div>
                   {item.observation && (
-                    <div style={{ fontSize: '12px', color: 'var(--warning)', marginTop: '2px' }}>
+                    <div style={{ fontSize: '12px', color: '#3E1F00', marginTop: '2px', fontWeight: '500' }}>
                       📝 {item.observation}
                     </div>
                   )}
                   {item.is_cancelled && (
-                    <div style={{ fontSize: '11px', color: 'var(--danger)' }}>Cancelado</div>
+                    <div style={{ fontSize: '11px', color: 'var(--danger)', fontWeight: '600' }}>Cancelado</div>
                   )}
                 </div>
-                <span style={{ fontWeight: '700', color: 'var(--text)', minWidth: '70px', textAlign: 'right' }}>
+                <span style={{ fontWeight: '700', color: '#000000', minWidth: '70px', textAlign: 'right' }}>
                   R$ {(item.unit_price * item.quantity).toFixed(2)}
                 </span>
                 {isEditable && isAtendente && !item.is_cancelled && (
