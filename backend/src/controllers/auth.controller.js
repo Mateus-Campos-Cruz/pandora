@@ -14,9 +14,9 @@ async function login(req, res) {
 
   try {
     const result = await db.query(
-      `SELECT id, name, email, password_hash, role, is_active
-       FROM users
-       WHERE email = $1 AND deleted_at IS NULL`,
+      `SELECT id, nome AS name, email, senha_hash AS password_hash, perfil AS role, ativo AS is_active
+       FROM usuarios
+       WHERE email = $1 AND ativo = TRUE`,
       [email.toLowerCase().trim()]
     );
 
@@ -39,7 +39,7 @@ async function login(req, res) {
       id:    user.id,
       name:  user.name,
       email: user.email,
-      role:  user.role,
+      role:  user.role === 'administrador' ? 'admin' : user.role,
     };
 
     const token = jwt.sign(payload, process.env.JWT_SECRET, {

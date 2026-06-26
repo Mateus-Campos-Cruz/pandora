@@ -7,15 +7,15 @@ const db = require('../config/database');
 async function listMenuItems(req, res) {
   try {
     const { active } = req.query;
-    let sql = `SELECT id, name, category, price, description, is_active, created_at
-               FROM menu_items WHERE deleted_at IS NULL`;
+    let sql = `SELECT id, nome AS name, categoria AS category, 0 AS price, '' AS description, ativo AS is_active, criado_em AS created_at
+               FROM cardapio_itens WHERE 1=1`;
 
     const params = [];
     if (active === 'true') {
-      sql += ' AND is_active = true';
+      sql += ' AND ativo = true';
     }
 
-    sql += ' ORDER BY category ASC, name ASC';
+    sql += ' ORDER BY categoria ASC, nome ASC';
 
     const result = await db.query(sql, params);
     return res.json({ items: result.rows });
@@ -29,10 +29,10 @@ async function listMenuItems(req, res) {
  * POST /api/menu — Criar item do cardápio (Admin)
  */
 async function createMenuItem(req, res) {
-  const { name, category, price, description } = req.body;
+  const { name, category } = req.body;
 
-  if (!name || !category || price === undefined) {
-    return res.status(400).json({ error: 'Campos obrigatórios: name, category, price.' });
+  if (!name || !category) {
+    return res.status(400).json({ error: 'Campos obrigatórios: name, category.' });
   }
 
   const validCategories = ['prato_principal', 'bebida', 'sobremesa', 'adicional'];
@@ -40,16 +40,12 @@ async function createMenuItem(req, res) {
     return res.status(400).json({ error: `Categoria inválida. Use: ${validCategories.join(', ')}` });
   }
 
-  if (isNaN(price) || Number(price) < 0) {
-    return res.status(400).json({ error: 'Preço deve ser um número positivo.' });
-  }
-
   try {
     const result = await db.query(
-      `INSERT INTO menu_items (name, category, price, description)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, name, category, price, description, is_active`,
-      [name.trim(), category, Number(price), description?.trim() || null]
+      `INSERT INTO cardapio_itens (nome, categoria)
+       VALUES ($1, $2)
+       RETURNING id, nome AS name, categoria AS category, 0 AS price, '' AS description, ativo AS is_active`,
+      [name.trim(), category]
     );
 
     return res.status(201).json({ item: result.rows[0] });
@@ -64,11 +60,11 @@ async function createMenuItem(req, res) {
  */
 async function updateMenuItem(req, res) {
   const { id } = req.params;
-  const { name, category, price, description, is_active } = req.body;
+  const { name, category, is_active } = req.body;
 
   try {
     const existing = await db.query(
-      'SELECT id FROM menu_items WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT id FROM cardapio_itens WHERE id = $1',
       [id]
     );
 
@@ -80,11 +76,9 @@ async function updateMenuItem(req, res) {
     const values = [];
     let idx = 1;
 
-    if (name)        { fields.push(`name = $${idx++}`);        values.push(name.trim()); }
-    if (category)    { fields.push(`category = $${idx++}`);    values.push(category); }
-    if (price !== undefined) { fields.push(`price = $${idx++}`); values.push(Number(price)); }
-    if (description !== undefined) { fields.push(`description = $${idx++}`); values.push(description?.trim() || null); }
-    if (is_active !== undefined)   { fields.push(`is_active = $${idx++}`);   values.push(is_active); }
+    if (name)        { fields.push(`nome = $${idx++}`);        values.push(name.trim()); }
+    if (category)    { fields.push(`categoria = $${idx++}`);    values.push(category); }
+    if (is_active !== undefined)   { fields.push(`ativo = $${idx++}`);   values.push(is_active); }
 
     if (fields.length === 0) {
       return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
@@ -92,8 +86,8 @@ async function updateMenuItem(req, res) {
 
     values.push(id);
     const result = await db.query(
-      `UPDATE menu_items SET ${fields.join(', ')} WHERE id = $${idx}
-       RETURNING id, name, category, price, description, is_active`,
+      `UPDATE cardapio_itens SET ${fields.join(', ')} WHERE id = $${idx}
+       RETURNING id, nome AS name, categoria AS category, 0 AS price, '' AS description, ativo AS is_active`,
       values
     );
 
@@ -112,8 +106,8 @@ async function deleteMenuItem(req, res) {
 
   try {
     const result = await db.query(
-      `UPDATE menu_items SET deleted_at = NOW(), is_active = false
-       WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+      `UPDATE cardapio_itens SET ativo = FALSE
+       WHERE id = $1 RETURNING id`,
       [id]
     );
 

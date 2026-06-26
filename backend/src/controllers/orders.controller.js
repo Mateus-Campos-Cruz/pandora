@@ -7,21 +7,21 @@ async function listActiveOrders(req, res) {
   try {
     const result = await db.query(
       `SELECT
-         o.id, o.type, o.status,
-         o.customer_name, o.customer_phone, o.customer_address,
-         o.opened_at, o.notes,
-         t.identifier as table_identifier,
-         u.name as attendant_name,
-         COUNT(oi.id) FILTER (WHERE oi.is_cancelled = false) as item_count,
-         SUM(oi.unit_price * oi.quantity) FILTER (WHERE oi.is_cancelled = false) as total
-       FROM orders o
-       LEFT JOIN tables t ON t.id = o.table_id
-       LEFT JOIN users u ON u.id = o.attendant_id
-       LEFT JOIN order_items oi ON oi.order_id = o.id
-       WHERE o.deleted_at IS NULL
-         AND o.status NOT IN ('encerrado')
-       GROUP BY o.id, t.identifier, u.name
-       ORDER BY o.opened_at ASC`
+         o.id, o.tipo AS type, o.status,
+         c.nome AS customer_name, c.telefone AS customer_phone, o.endereco_entrega AS customer_address,
+         o.aberto_em AS opened_at, '' AS notes,
+         t.numero as table_identifier,
+         u.nome as attendant_name,
+         COUNT(oi.id) FILTER (WHERE oi.cancelado = false) as item_count,
+         0 as total
+       FROM pedidos o
+       LEFT JOIN mesas t ON t.id = o.mesa_id
+       LEFT JOIN clientes c ON c.id = o.cliente_id
+       LEFT JOIN usuarios u ON u.id = o.atendente_id
+       LEFT JOIN pedido_itens oi ON oi.pedido_id = o.id
+       WHERE o.status NOT IN ('encerrado')
+       GROUP BY o.id, t.numero, c.nome, c.telefone, u.nome
+       ORDER BY o.aberto_em ASC`
     );
 
     return res.json({ orders: result.rows });
@@ -40,15 +40,16 @@ async function getOrder(req, res) {
   try {
     const orderResult = await db.query(
       `SELECT
-         o.id, o.type, o.status,
-         o.customer_name, o.customer_phone, o.customer_address,
-         o.opened_at, o.closed_at, o.notes,
-         t.identifier as table_identifier,
-         u.name as attendant_name
-       FROM orders o
-       LEFT JOIN tables t ON t.id = o.table_id
-       LEFT JOIN users u ON u.id = o.attendant_id
-       WHERE o.id = $1 AND o.deleted_at IS NULL`,
+         o.id, o.tipo AS type, o.status,
+         c.nome AS customer_name, c.telefone AS customer_phone, o.endereco_entrega AS customer_address,
+         o.aberto_em AS opened_at, o.encerrado_em AS closed_at, '' AS notes,
+         t.numero as table_identifier,
+         u.nome as attendant_name
+       FROM pedidos o
+       LEFT JOIN mesas t ON t.id = o.mesa_id
+       LEFT JOIN clientes c ON c.id = o.cliente_id
+       LEFT JOIN usuarios u ON u.id = o.atendente_id
+       WHERE o.id = $1`,
       [id]
     );
 
@@ -58,21 +59,21 @@ async function getOrder(req, res) {
 
     const itemsResult = await db.query(
       `SELECT
-         oi.id, oi.quantity, oi.unit_price, oi.observation, oi.is_cancelled,
-         mi.name as item_name, mi.category
-       FROM order_items oi
-       JOIN menu_items mi ON mi.id = oi.menu_item_id
-       WHERE oi.order_id = $1
-       ORDER BY oi.created_at ASC`,
+         oi.id, oi.quantidade AS quantity, 0 AS unit_price, oi.observacao AS observation, oi.cancelado AS is_cancelled,
+         mi.nome as item_name, mi.categoria AS category
+       FROM pedido_itens oi
+       JOIN cardapio_itens mi ON mi.id = oi.cardapio_item_id
+       WHERE oi.pedido_id = $1
+       ORDER BY oi.adicionado_em ASC`,
       [id]
     );
 
     const statusLogResult = await db.query(
-      `SELECT l.from_status, l.to_status, l.changed_at, l.notes, u.name as changed_by
-       FROM order_status_log l
-       JOIN users u ON u.id = l.changed_by_user_id
-       WHERE l.order_id = $1
-       ORDER BY l.changed_at ASC`,
+      `SELECT l.status_anterior AS from_status, l.status_novo AS to_status, l.alterado_em AS changed_at, '' AS notes, u.nome as changed_by
+       FROM pedido_status_historico l
+       JOIN usuarios u ON u.id = l.alterado_por
+       WHERE l.pedido_id = $1
+       ORDER BY l.alterado_em ASC`,
       [id]
     );
 
@@ -114,8 +115,8 @@ async function createOrder(req, res) {
     // Verificar se mesa já tem pedido ativo
     if (type === 'salao') {
       const tableCheck = await client.query(
-        `SELECT id FROM orders
-         WHERE table_id = $1 AND deleted_at IS NULL
+        `SELECT id FROM pedidos
+         WHERE mesa_id = $1
            AND status NOT IN ('entregue', 'encerrado')`,
         [table_id]
       );
@@ -126,20 +127,45 @@ async function createOrder(req, res) {
       }
     }
 
+    // Gerenciar Cliente para pedidos
+    let cliente_id = null;
+    if (customer_phone) {
+      const clientCheck = await client.query(
+        'SELECT id FROM clientes WHERE telefone = $1',
+        [customer_phone.trim()]
+      );
+      if (clientCheck.rows.length > 0) {
+        cliente_id = clientCheck.rows[0].id;
+      } else {
+        const newClient = await client.query(
+          'INSERT INTO clientes (nome, telefone, endereco_padrao) VALUES ($1, $2, $3) RETURNING id',
+          [customer_name?.trim() || 'Cliente Delivery', customer_phone.trim(), customer_address || null]
+        );
+        cliente_id = newClient.rows[0].id;
+      }
+    } else if (customer_name && type === 'salao') {
+      // Se tiver nome do cliente em mesa, cadastra como avulso sem telefone obrigatório caso queira ou cria com id fixo.
+      // Como telefone em clientes é UNIQUE e NOT NULL, geramos um provisório se necessário.
+      const provisorioTelefone = 'SALAO-' + Date.now();
+      const newClient = await client.query(
+        'INSERT INTO clientes (nome, telefone) VALUES ($1, $2) RETURNING id',
+        [customer_name.trim(), provisorioTelefone]
+      );
+      cliente_id = newClient.rows[0].id;
+    }
+
     // Criar pedido
     const orderResult = await client.query(
-      `INSERT INTO orders
-         (type, table_id, customer_name, customer_phone, customer_address, attendant_id, notes)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING id, type, status, table_id, customer_name, opened_at`,
+      `INSERT INTO pedidos
+         (tipo, mesa_id, cliente_id, atendente_id, endereco_entrega)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, tipo AS type, status, mesa_id AS table_id, aberto_em AS opened_at`,
       [
         type,
         table_id || null,
-        customer_name || null,
-        customer_phone || null,
-        customer_address || null,
+        cliente_id,
         req.user.id,
-        notes || null,
+        type === 'delivery' ? customer_address : null
       ]
     );
 
@@ -147,7 +173,7 @@ async function createOrder(req, res) {
 
     // Registrar status inicial no log
     await client.query(
-      `INSERT INTO order_status_log (order_id, from_status, to_status, changed_by_user_id)
+      `INSERT INTO pedido_status_historico (pedido_id, status_anterior, status_novo, alterado_por)
        VALUES ($1, NULL, 'recebido', $2)`,
       [order.id, req.user.id]
     );
@@ -155,7 +181,7 @@ async function createOrder(req, res) {
     // Marcar mesa como ocupada
     if (type === 'salao') {
       await client.query(
-        `UPDATE tables SET status = 'ocupada' WHERE id = $1`,
+        `UPDATE mesas SET status = 'ocupada' WHERE id = $1`,
         [table_id]
       );
     }
@@ -186,7 +212,7 @@ async function addItem(req, res) {
   try {
     // Verificar pedido existe e está em status editável
     const orderResult = await db.query(
-      `SELECT id, status FROM orders WHERE id = $1 AND deleted_at IS NULL`,
+      `SELECT id, status FROM pedidos WHERE id = $1`,
       [id]
     );
 
@@ -205,7 +231,7 @@ async function addItem(req, res) {
 
     // Verificar item do cardápio
     const menuResult = await db.query(
-      `SELECT id, price, name FROM menu_items WHERE id = $1 AND deleted_at IS NULL AND is_active = true`,
+      `SELECT id, nome FROM cardapio_itens WHERE id = $1 AND ativo = true`,
       [menu_item_id]
     );
 
@@ -216,14 +242,14 @@ async function addItem(req, res) {
     const menuItem = menuResult.rows[0];
 
     const result = await db.query(
-      `INSERT INTO order_items (order_id, menu_item_id, quantity, unit_price, observation)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, menu_item_id, quantity, unit_price, observation, is_cancelled`,
-      [id, menu_item_id, quantity, menuItem.price, observation?.trim() || null]
+      `INSERT INTO pedido_itens (pedido_id, cardapio_item_id, quantidade, observacao)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, cardapio_item_id AS menu_item_id, quantidade, 0 AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
+      [id, menu_item_id, quantity, observation?.trim() || null]
     );
 
     return res.status(201).json({
-      item: { ...result.rows[0], item_name: menuItem.name },
+      item: { ...result.rows[0], item_name: menuItem.nome },
     });
   } catch (err) {
     console.error('[orders/addItem]', err);
@@ -249,11 +275,12 @@ async function updateItem(req, res) {
   try {
     // Buscar item e verificar status do pedido
     const itemResult = await db.query(
-      `SELECT oi.*, o.status as order_status, mi.name as item_name
-       FROM order_items oi
-       JOIN orders o ON o.id = oi.order_id
-       JOIN menu_items mi ON mi.id = oi.menu_item_id
-       WHERE oi.id = $1 AND oi.order_id = $2 AND o.deleted_at IS NULL`,
+      `SELECT oi.id, oi.quantidade AS quantity, oi.observacao AS observation, oi.cancelado AS is_cancelled,
+              o.status as order_status, mi.nome as item_name
+       FROM pedido_itens oi
+       JOIN pedidos o ON o.id = oi.pedido_id
+       JOIN cardapio_itens mi ON mi.id = oi.cardapio_item_id
+       WHERE oi.id = $1 AND oi.pedido_id = $2`,
       [itemId, id]
     );
 
@@ -282,8 +309,10 @@ async function updateItem(req, res) {
 
       if (action === 'cancel') {
         const res2 = await client.query(
-          `UPDATE order_items SET is_cancelled = true WHERE id = $1 RETURNING *`,
-          [itemId]
+          `UPDATE pedido_itens
+           SET cancelado = true, cancelado_motivo = $2, cancelado_por = $3, cancelado_em = NOW()
+           WHERE id = $1 RETURNING id, cardapio_item_id AS menu_item_id, quantidade, 0 AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
+          [itemId, justification.trim(), req.user.id]
         );
         updatedItem = res2.rows[0];
       } else {
@@ -296,12 +325,13 @@ async function updateItem(req, res) {
         const values = [];
         let idx = 1;
 
-        if (quantity)    { fields.push(`quantity = $${idx++}`);    values.push(quantity); }
-        if (observation !== undefined) { fields.push(`observation = $${idx++}`); values.push(observation?.trim() || null); }
+        if (quantity)    { fields.push(`quantidade = $${idx++}`);    values.push(quantity); }
+        if (observation !== undefined) { fields.push(`observacao = $${idx++}`); values.push(observation?.trim() || null); }
 
         values.push(itemId);
         const res2 = await client.query(
-          `UPDATE order_items SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+          `UPDATE pedido_itens SET ${fields.join(', ')} WHERE id = $${idx}
+           RETURNING id, cardapio_item_id AS menu_item_id, quantidade, 0 AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
           values
         );
         updatedItem = res2.rows[0];
@@ -309,16 +339,13 @@ async function updateItem(req, res) {
 
       // Registrar na auditoria
       await client.query(
-        `INSERT INTO item_edit_log
-           (order_item_id, action, justification, performed_by_user_id,
-            previous_quantity, new_quantity, previous_observation, new_observation)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        `INSERT INTO audit_log (usuario_id, acao, tabela_afetada, registro_id, detalhe)
+         VALUES ($1, $2, 'pedido_itens', $3, $4)`,
         [
-          itemId, action, justification.trim(), req.user.id,
-          item.quantity,
-          action === 'edit' ? (quantity || item.quantity) : item.quantity,
-          item.observation,
-          action === 'edit' ? (observation?.trim() || item.observation) : item.observation,
+          req.user.id,
+          action === 'cancel' ? 'item_cancelado' : 'item_editado',
+          itemId,
+          `justificativa: ${justification.trim()}`
         ]
       );
 
@@ -353,9 +380,9 @@ async function updateOrderStatus(req, res) {
 
   try {
     const orderResult = await db.query(
-      `SELECT o.id, o.status, o.table_id, o.type
-       FROM orders o
-       WHERE o.id = $1 AND o.deleted_at IS NULL`,
+      `SELECT o.id, o.status, o.mesa_id, o.tipo
+       FROM pedidos o
+       WHERE o.id = $1`,
       [id]
     );
 
@@ -389,24 +416,23 @@ async function updateOrderStatus(req, res) {
       await client.query('BEGIN');
 
       // Atualizar status do pedido
-      const closed_at = newStatus === 'encerrado' ? 'NOW()' : 'NULL';
       await client.query(
-        `UPDATE orders SET status = $1, closed_at = ${newStatus === 'encerrado' ? 'NOW()' : 'closed_at'} WHERE id = $2`,
+        `UPDATE pedidos SET status = $1 WHERE id = $2`,
         [newStatus, id]
       );
 
-      // Log de auditoria
+      // Log de histórico
       await client.query(
-        `INSERT INTO order_status_log (order_id, from_status, to_status, changed_by_user_id, notes)
-         VALUES ($1, $2, $3, $4, $5)`,
-        [id, order.status, newStatus, req.user.id, notes || null]
+        `INSERT INTO pedido_status_historico (pedido_id, status_anterior, status_novo, alterado_por)
+         VALUES ($1, $2, $3, $4)`,
+        [id, order.status, newStatus, req.user.id]
       );
 
-      // Se encerrado, liberar mesa
-      if (newStatus === 'encerrado' && order.table_id) {
+      // Se encerrado e for salão, liberar mesa
+      if (newStatus === 'encerrado' && order.mesa_id) {
         await client.query(
-          `UPDATE tables SET status = 'livre' WHERE id = $1`,
-          [order.table_id]
+          `UPDATE mesas SET status = 'livre' WHERE id = $1`,
+          [order.mesa_id]
         );
       }
 

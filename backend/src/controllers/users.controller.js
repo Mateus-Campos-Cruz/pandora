@@ -7,12 +7,19 @@ const db = require('../config/database');
 async function listUsers(req, res) {
   try {
     const result = await db.query(
-      `SELECT id, name, email, role, is_active, created_at
-       FROM users
-       WHERE deleted_at IS NULL
-       ORDER BY name ASC`
+      `SELECT id, nome AS name, email, perfil AS role, ativo AS is_active, criado_em AS created_at
+       FROM usuarios
+       WHERE ativo = TRUE
+       ORDER BY nome ASC`
     );
-    return res.json({ users: result.rows });
+    
+    // Mapeia administrador -> admin para o frontend
+    const users = result.rows.map(u => ({
+      ...u,
+      role: u.role === 'administrador' ? 'admin' : u.role
+    }));
+
+    return res.json({ users });
   } catch (err) {
     console.error('[users/list]', err);
     return res.status(500).json({ error: 'Erro ao listar usuários.' });
@@ -34,9 +41,12 @@ async function createUser(req, res) {
     return res.status(400).json({ error: `Role inválido. Use: ${validRoles.join(', ')}` });
   }
 
+  // Mapeia para o banco (administrador)
+  const dbPerfil = role === 'admin' ? 'administrador' : role;
+
   try {
     const existing = await db.query(
-      'SELECT id FROM users WHERE email = $1 AND deleted_at IS NULL',
+      'SELECT id FROM usuarios WHERE email = $1 AND ativo = TRUE',
       [email.toLowerCase().trim()]
     );
 
@@ -47,13 +57,16 @@ async function createUser(req, res) {
     const passwordHash = await bcrypt.hash(password, 12);
 
     const result = await db.query(
-      `INSERT INTO users (name, email, password_hash, role)
+      `INSERT INTO usuarios (nome, email, senha_hash, perfil)
        VALUES ($1, $2, $3, $4)
-       RETURNING id, name, email, role, is_active, created_at`,
-      [name.trim(), email.toLowerCase().trim(), passwordHash, role]
+       RETURNING id, nome AS name, email, perfil AS role, ativo AS is_active, criado_em AS created_at`,
+      [name.trim(), email.toLowerCase().trim(), passwordHash, dbPerfil]
     );
 
-    return res.status(201).json({ user: result.rows[0] });
+    const user = result.rows[0];
+    user.role = user.role === 'administrador' ? 'admin' : user.role;
+
+    return res.status(201).json({ user });
   } catch (err) {
     console.error('[users/create]', err);
     return res.status(500).json({ error: 'Erro ao criar usuário.' });
@@ -69,7 +82,7 @@ async function updateUser(req, res) {
 
   try {
     const existing = await db.query(
-      'SELECT id FROM users WHERE id = $1 AND deleted_at IS NULL',
+      'SELECT id FROM usuarios WHERE id = $1 AND ativo = TRUE',
       [id]
     );
 
@@ -81,13 +94,25 @@ async function updateUser(req, res) {
     const values = [];
     let idx = 1;
 
-    if (name)       { fields.push(`name = $${idx++}`);       values.push(name.trim()); }
-    if (email)      { fields.push(`email = $${idx++}`);      values.push(email.toLowerCase().trim()); }
-    if (role)       { fields.push(`role = $${idx++}`);       values.push(role); }
-    if (is_active !== undefined) { fields.push(`is_active = $${idx++}`); values.push(is_active); }
-    if (password)   {
+    if (name) { 
+      fields.push(`nome = $${idx++}`); 
+      values.push(name.trim()); 
+    }
+    if (email) { 
+      fields.push(`email = $${idx++}`); 
+      values.push(email.toLowerCase().trim()); 
+    }
+    if (role) { 
+      fields.push(`perfil = $${idx++}`); 
+      values.push(role === 'admin' ? 'administrador' : role); 
+    }
+    if (is_active !== undefined) { 
+      fields.push(`ativo = $${idx++}`); 
+      values.push(is_active); 
+    }
+    if (password) {
       const hash = await bcrypt.hash(password, 12);
-      fields.push(`password_hash = $${idx++}`);
+      fields.push(`senha_hash = $${idx++}`);
       values.push(hash);
     }
 
@@ -97,11 +122,14 @@ async function updateUser(req, res) {
 
     values.push(id);
     const result = await db.query(
-      `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, name, email, role, is_active`,
+      `UPDATE usuarios SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, nome AS name, email, perfil AS role, ativo AS is_active`,
       values
     );
 
-    return res.json({ user: result.rows[0] });
+    const user = result.rows[0];
+    user.role = user.role === 'administrador' ? 'admin' : user.role;
+
+    return res.json({ user });
   } catch (err) {
     console.error('[users/update]', err);
     return res.status(500).json({ error: 'Erro ao atualizar usuário.' });
@@ -121,8 +149,8 @@ async function deleteUser(req, res) {
 
   try {
     const result = await db.query(
-      `UPDATE users SET deleted_at = NOW(), is_active = false
-       WHERE id = $1 AND deleted_at IS NULL
+      `UPDATE usuarios SET ativo = FALSE
+       WHERE id = $1 AND ativo = TRUE
        RETURNING id`,
       [id]
     );

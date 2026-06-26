@@ -7,17 +7,17 @@ const db = require('../config/database');
 async function getHistory(req, res) {
   const { date, type, status, page = 1, limit = 20 } = req.query;
 
-  const conditions = ["o.deleted_at IS NULL", "o.status = 'encerrado'"];
+  const conditions = ["o.status = 'encerrado'"];
   const params = [];
   let idx = 1;
 
   if (date) {
-    conditions.push(`DATE(o.opened_at AT TIME ZONE 'America/Sao_Paulo') = $${idx++}`);
+    conditions.push(`DATE(o.aberto_em AT TIME ZONE 'America/Sao_Paulo') = $${idx++}`);
     params.push(date);
   }
 
   if (type && ['salao', 'delivery'].includes(type)) {
-    conditions.push(`o.type = $${idx++}`);
+    conditions.push(`o.tipo = $${idx++}`);
     params.push(type);
   }
 
@@ -33,7 +33,7 @@ async function getHistory(req, res) {
     const whereClause = conditions.join(' AND ');
 
     const countResult = await db.query(
-      `SELECT COUNT(*) FROM orders o WHERE ${whereClause}`,
+      `SELECT COUNT(*) FROM pedidos o WHERE ${whereClause}`,
       params
     );
 
@@ -44,20 +44,21 @@ async function getHistory(req, res) {
 
     const result = await db.query(
       `SELECT
-         o.id, o.type, o.status,
-         o.customer_name, o.customer_phone,
-         o.opened_at, o.closed_at,
-         t.identifier as table_identifier,
-         u.name as attendant_name,
-         COUNT(oi.id) FILTER (WHERE oi.is_cancelled = false) as item_count,
-         COALESCE(SUM(oi.unit_price * oi.quantity) FILTER (WHERE oi.is_cancelled = false), 0) as total
-       FROM orders o
-       LEFT JOIN tables t ON t.id = o.table_id
-       LEFT JOIN users u ON u.id = o.attendant_id
-       LEFT JOIN order_items oi ON oi.order_id = o.id
+         o.id, o.tipo AS type, o.status,
+         c.nome as customer_name, c.telefone as customer_phone,
+         o.aberto_em AS opened_at, o.encerrado_em AS closed_at,
+         t.numero as table_identifier,
+         u.nome as attendant_name,
+         COUNT(oi.id) FILTER (WHERE oi.cancelado = false) as item_count,
+         0 as total
+       FROM pedidos o
+       LEFT JOIN mesas t ON t.id = o.mesa_id
+       LEFT JOIN clientes c ON c.id = o.cliente_id
+       LEFT JOIN usuarios u ON u.id = o.atendente_id
+       LEFT JOIN pedido_itens oi ON oi.pedido_id = o.id
        WHERE ${whereClause}
-       GROUP BY o.id, t.identifier, u.name
-       ORDER BY o.closed_at DESC
+       GROUP BY o.id, t.numero, c.nome, c.telefone, u.nome
+       ORDER BY o.encerrado_em DESC
        LIMIT $${idx++} OFFSET $${idx++}`,
       params
     );

@@ -6,14 +6,12 @@ const db = require('../config/database');
 async function listTables(req, res) {
   try {
     const result = await db.query(
-      `SELECT t.id, t.identifier, t.status, t.capacity, t.created_at,
-              o.id as active_order_id
-       FROM tables t
-       LEFT JOIN orders o ON o.table_id = t.id
-         AND o.deleted_at IS NULL
+      `SELECT t.id, t.numero AS identifier, t.status, 4 AS capacity, t.criado_em AS created_at,
+              o.id AS active_order_id
+       FROM mesas t
+       LEFT JOIN pedidos o ON o.mesa_id = t.id
          AND o.status NOT IN ('entregue', 'encerrado')
-       WHERE t.deleted_at IS NULL
-       ORDER BY t.identifier ASC`
+       ORDER BY t.numero ASC`
     );
     return res.json({ tables: result.rows });
   } catch (err) {
@@ -26,7 +24,7 @@ async function listTables(req, res) {
  * POST /api/tables — Criar mesa (Admin)
  */
 async function createTable(req, res) {
-  const { identifier, capacity } = req.body;
+  const { identifier } = req.body;
 
   if (!identifier) {
     return res.status(400).json({ error: 'Identificador da mesa é obrigatório.' });
@@ -34,7 +32,7 @@ async function createTable(req, res) {
 
   try {
     const existing = await db.query(
-      'SELECT id FROM tables WHERE identifier = $1 AND deleted_at IS NULL',
+      'SELECT id FROM mesas WHERE numero = $1',
       [identifier.trim()]
     );
 
@@ -43,9 +41,9 @@ async function createTable(req, res) {
     }
 
     const result = await db.query(
-      `INSERT INTO tables (identifier, capacity) VALUES ($1, $2)
-       RETURNING id, identifier, status, capacity`,
-      [identifier.trim(), capacity || 4]
+      `INSERT INTO mesas (numero) VALUES ($1)
+       RETURNING id, numero AS identifier, status, 4 AS capacity`,
+      [identifier.trim()]
     );
 
     return res.status(201).json({ table: result.rows[0] });
@@ -69,8 +67,8 @@ async function updateTableStatus(req, res) {
 
   try {
     const result = await db.query(
-      `UPDATE tables SET status = $1 WHERE id = $2 AND deleted_at IS NULL
-       RETURNING id, identifier, status`,
+      `UPDATE mesas SET status = $1 WHERE id = $2
+       RETURNING id, numero AS identifier, status`,
       [status, id]
     );
 
@@ -86,7 +84,7 @@ async function updateTableStatus(req, res) {
 }
 
 /**
- * DELETE /api/tables/:id — Soft delete (Admin)
+ * DELETE /api/tables/:id — Remover mesa (Admin)
  */
 async function deleteTable(req, res) {
   const { id } = req.params;
@@ -94,7 +92,7 @@ async function deleteTable(req, res) {
   try {
     // Verificar se há pedido ativo
     const activeOrder = await db.query(
-      `SELECT id FROM orders WHERE table_id = $1 AND deleted_at IS NULL
+      `SELECT id FROM pedidos WHERE mesa_id = $1
        AND status NOT IN ('entregue', 'encerrado')`,
       [id]
     );
@@ -104,7 +102,7 @@ async function deleteTable(req, res) {
     }
 
     const result = await db.query(
-      `UPDATE tables SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL RETURNING id`,
+      `DELETE FROM mesas WHERE id = $1 RETURNING id`,
       [id]
     );
 
