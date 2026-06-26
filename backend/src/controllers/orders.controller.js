@@ -369,7 +369,7 @@ async function updateItem(req, res) {
  */
 async function updateOrderStatus(req, res) {
   const { id } = req.params;
-  const { status, notes } = req.body;
+  const { status, notes } = req.body || {};
 
   const validTransitions = {
     recebido:   { next: 'em_preparo', roles: ['cozinha', 'admin'] },
