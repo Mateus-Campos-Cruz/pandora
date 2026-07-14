@@ -7,7 +7,7 @@ const db = require('../config/database');
 async function listMenuItems(req, res) {
   try {
     const { active } = req.query;
-    let sql = `SELECT id, nome AS name, categoria AS category, 0 AS price, '' AS description, ativo AS is_active, criado_em AS created_at
+    let sql = `SELECT id, nome AS name, categoria AS category, preco AS price, descricao AS description, ativo AS is_active, criado_em AS created_at
                FROM cardapio_itens WHERE 1=1`;
 
     const params = [];
@@ -29,7 +29,7 @@ async function listMenuItems(req, res) {
  * POST /api/menu — Criar item do cardápio (Admin)
  */
 async function createMenuItem(req, res) {
-  const { name, category } = req.body;
+  const { name, category, price, description } = req.body;
 
   if (!name || !category) {
     return res.status(400).json({ error: 'Campos obrigatórios: name, category.' });
@@ -40,12 +40,17 @@ async function createMenuItem(req, res) {
     return res.status(400).json({ error: `Categoria inválida. Use: ${validCategories.join(', ')}` });
   }
 
+  const numericPrice = Number(price);
+  if (price !== undefined && (isNaN(numericPrice) || numericPrice < 0)) {
+    return res.status(400).json({ error: 'Preço deve ser um número válido e maior ou igual a zero.' });
+  }
+
   try {
     const result = await db.query(
-      `INSERT INTO cardapio_itens (nome, categoria)
-       VALUES ($1, $2)
-       RETURNING id, nome AS name, categoria AS category, 0 AS price, '' AS description, ativo AS is_active`,
-      [name.trim(), category]
+      `INSERT INTO cardapio_itens (nome, categoria, preco, descricao)
+       VALUES ($1, $2, $3, $4)
+       RETURNING id, nome AS name, categoria AS category, preco AS price, descricao AS description, ativo AS is_active`,
+      [name.trim(), category, numericPrice || 0, description?.trim() || null]
     );
 
     return res.status(201).json({ item: result.rows[0] });
@@ -60,7 +65,7 @@ async function createMenuItem(req, res) {
  */
 async function updateMenuItem(req, res) {
   const { id } = req.params;
-  const { name, category, is_active } = req.body;
+  const { name, category, price, description, is_active } = req.body;
 
   try {
     const existing = await db.query(
@@ -79,6 +84,14 @@ async function updateMenuItem(req, res) {
     if (name)        { fields.push(`nome = $${idx++}`);        values.push(name.trim()); }
     if (category)    { fields.push(`categoria = $${idx++}`);    values.push(category); }
     if (is_active !== undefined)   { fields.push(`ativo = $${idx++}`);   values.push(is_active); }
+    if (price !== undefined) {
+      const numericPrice = Number(price);
+      if (isNaN(numericPrice) || numericPrice < 0) {
+        return res.status(400).json({ error: 'Preço deve ser um número válido e maior ou igual a zero.' });
+      }
+      fields.push(`preco = $${idx++}`); values.push(numericPrice);
+    }
+    if (description !== undefined) { fields.push(`descricao = $${idx++}`); values.push(description?.trim() || null); }
 
     if (fields.length === 0) {
       return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
@@ -87,7 +100,7 @@ async function updateMenuItem(req, res) {
     values.push(id);
     const result = await db.query(
       `UPDATE cardapio_itens SET ${fields.join(', ')} WHERE id = $${idx}
-       RETURNING id, nome AS name, categoria AS category, 0 AS price, '' AS description, ativo AS is_active`,
+       RETURNING id, nome AS name, categoria AS category, preco AS price, descricao AS description, ativo AS is_active`,
       values
     );
 

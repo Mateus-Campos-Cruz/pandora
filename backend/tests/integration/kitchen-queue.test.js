@@ -32,7 +32,7 @@ jest.mock('../../src/config/database', () => ({
     const s = sql.replace(/\s+/g, ' ').trim();
 
     // Kitchen queue
-    if (s.includes('FROM orders o') && s.includes("status IN ('recebido', 'em_preparo', 'pronto')")) {
+    if (s.includes('FROM pedidos o') && s.includes("status IN ('recebido', 'em_preparo', 'pronto')")) {
       return {
         rows: [{
           id: 'order-sync-1',
@@ -47,7 +47,7 @@ jest.mock('../../src/config/database', () => ({
     }
 
     // Order items
-    if (s.includes('FROM order_items oi') && s.includes('JOIN menu_items mi')) {
+    if (s.includes('FROM pedido_itens oi') && s.includes('JOIN cardapio_itens mi')) {
       return { rows: [mockItem] };
     }
 

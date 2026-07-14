@@ -59,7 +59,7 @@ async function getOrder(req, res) {
 
     const itemsResult = await db.query(
       `SELECT
-         oi.id, oi.quantidade AS quantity, 0 AS unit_price, oi.observacao AS observation, oi.cancelado AS is_cancelled,
+         oi.id, oi.quantidade AS quantity, oi.preco_unitario AS unit_price, oi.observacao AS observation, oi.cancelado AS is_cancelled,
          mi.nome as item_name, mi.categoria AS category
        FROM pedido_itens oi
        JOIN cardapio_itens mi ON mi.id = oi.cardapio_item_id
@@ -231,7 +231,7 @@ async function addItem(req, res) {
 
     // Verificar item do cardápio
     const menuResult = await db.query(
-      `SELECT id, nome FROM cardapio_itens WHERE id = $1 AND ativo = true`,
+      `SELECT id, nome, preco FROM cardapio_itens WHERE id = $1 AND ativo = true`,
       [menu_item_id]
     );
 
@@ -242,10 +242,10 @@ async function addItem(req, res) {
     const menuItem = menuResult.rows[0];
 
     const result = await db.query(
-      `INSERT INTO pedido_itens (pedido_id, cardapio_item_id, quantidade, observacao)
-       VALUES ($1, $2, $3, $4)
-       RETURNING id, cardapio_item_id AS menu_item_id, quantidade, 0 AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
-      [id, menu_item_id, quantity, observation?.trim() || null]
+      `INSERT INTO pedido_itens (pedido_id, cardapio_item_id, quantidade, observacao, preco_unitario)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, cardapio_item_id AS menu_item_id, quantidade, preco_unitario AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
+      [id, menu_item_id, quantity, observation?.trim() || null, menuItem.preco]
     );
 
     return res.status(201).json({
@@ -311,7 +311,7 @@ async function updateItem(req, res) {
         const res2 = await client.query(
           `UPDATE pedido_itens
            SET cancelado = true, cancelado_motivo = $2, cancelado_por = $3, cancelado_em = NOW()
-           WHERE id = $1 RETURNING id, cardapio_item_id AS menu_item_id, quantidade, 0 AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
+           WHERE id = $1 RETURNING id, cardapio_item_id AS menu_item_id, quantidade, preco_unitario AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
           [itemId, justification.trim(), req.user.id]
         );
         updatedItem = res2.rows[0];
@@ -331,7 +331,7 @@ async function updateItem(req, res) {
         values.push(itemId);
         const res2 = await client.query(
           `UPDATE pedido_itens SET ${fields.join(', ')} WHERE id = $${idx}
-           RETURNING id, cardapio_item_id AS menu_item_id, quantidade, 0 AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
+           RETURNING id, cardapio_item_id AS menu_item_id, quantidade, preco_unitario AS unit_price, observacao AS observation, cancelado AS is_cancelled`,
           values
         );
         updatedItem = res2.rows[0];

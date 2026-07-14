@@ -46,38 +46,38 @@ jest.mock('../../src/config/database', () => {
       }
 
       // ── Orders: buscar por ID (updateOrderStatus + getOrder) ──────
-      if (s.includes('FROM orders o') && s.includes('o.id = $1') && params && params.length === 1) {
+      if (s.includes('FROM pedidos o') && s.includes('o.id = $1') && params && params.length === 1) {
         const order = mockOrders.get(params[0]);
         return { rows: order ? [{ ...order, table_identifier: 'Mesa 1', attendant_name: 'Atendente' }] : [] };
       }
 
       // ── Orders: buscar por ID (addItem — verifica status) ─────────
-      if (s.includes('FROM orders') && s.includes('id = $1') && params && params.length === 1) {
+      if (s.includes('FROM pedidos') && s.includes('id = $1') && params && params.length === 1) {
         const order = mockOrders.get(params[0]);
         return { rows: order ? [order] : [] };
       }
 
       // ── Menu: buscar item ativo ───────────────────────────────────
-      if (s.includes('FROM menu_items WHERE id =') && s.includes('is_active = true')) {
+      if (s.includes('FROM cardapio_itens WHERE id =') && s.includes('ativo = true')) {
         const item = mockMenuItems.get(params[0]);
-        return { rows: item ? [item] : [] };
+        return { rows: item ? [{ ...item, preco: item.price }] : [] };
       }
 
       // ── Orders: listar ativos ─────────────────────────────────────
-      if (s.includes('FROM orders o') && s.includes("status NOT IN ('encerrado')")) {
+      if (s.includes('FROM pedidos o') && s.includes("status NOT IN ('encerrado')")) {
         return { rows: [...mockOrders.values()].filter(o => o.status !== 'encerrado') };
       }
 
       // ── Order Items: INSERT (addItem usa db.query diretamente) ────
-      if (s.includes('INSERT INTO order_items')) {
+      if (s.includes('INSERT INTO pedido_itens')) {
         const id = `item-${itemIdCounter++}`;
         const item = {
           id,
           order_id: params[0],
           menu_item_id: params[1],
           quantity: params[2],
-          unit_price: params[3],
-          observation: params[4],
+          unit_price: params[4],
+          observation: params[3],
           is_cancelled: false,
         };
         mockOrderItems.set(id, item);
@@ -85,18 +85,18 @@ jest.mock('../../src/config/database', () => {
       }
 
       // ── Order Items: listar ───────────────────────────────────────
-      if (s.includes('FROM order_items oi') && s.includes('JOIN menu_items mi') && params) {
+      if (s.includes('FROM pedido_itens oi') && s.includes('JOIN cardapio_itens mi') && params) {
         const items = [...mockOrderItems.values()].filter(i => i.order_id === params[0]);
         return { rows: items };
       }
 
       // ── Status Log: listar ────────────────────────────────────────
-      if (s.includes('FROM order_status_log')) {
+      if (s.includes('FROM pedido_status_historico')) {
         return { rows: [] };
       }
 
       // ── Tables: listar ────────────────────────────────────────────
-      if (s.includes('FROM tables t')) {
+      if (s.includes('FROM mesas t')) {
         return { rows: [...mockTables.values()] };
       }
 
@@ -118,7 +118,7 @@ jest.mock('../../src/config/database', () => {
         }
 
         // Criar pedido
-        if (s.includes('INSERT INTO orders')) {
+        if (s.includes('INSERT INTO pedidos')) {
           const id = `order-${orderIdCounter++}`;
           const order = {
             id, type: params[0], table_id: params[1],
@@ -131,25 +131,25 @@ jest.mock('../../src/config/database', () => {
         }
 
         // Criar item
-        if (s.includes('INSERT INTO order_items')) {
+        if (s.includes('INSERT INTO pedido_itens')) {
           const id = `item-${itemIdCounter++}`;
           const item = {
             id, order_id: params[0], menu_item_id: params[1],
-            quantity: params[2], unit_price: params[3],
-            observation: params[4], is_cancelled: false, item_name: 'X-Burguer',
+            quantity: params[2], unit_price: params[4],
+            observation: params[3], is_cancelled: false, item_name: 'X-Burguer',
           };
           mockOrderItems.set(id, item);
           return { rows: [item] };
         }
 
         // Log de status
-        if (s.includes('INSERT INTO order_status_log')) {
+        if (s.includes('INSERT INTO pedido_status_historico')) {
           mockStatusLog.push({ order_id: params[0], from: params[1], to: params[2] });
           return { rows: [] };
         }
 
         // Atualizar status do pedido
-        if (s.includes('UPDATE orders SET status =')) {
+        if (s.includes('UPDATE pedidos SET status =')) {
           const newStatus = params[0];
           const orderId   = params[1];
           const order = mockOrders.get(orderId);
@@ -161,7 +161,7 @@ jest.mock('../../src/config/database', () => {
         }
 
         // Atualizar mesa
-        if (s.includes('UPDATE tables SET status =')) {
+        if (s.includes('UPDATE mesas SET status =')) {
           const [newStatus, tableId] = params;
           const table = mockTables.get(tableId);
           if (table) table.status = newStatus;
