@@ -46,6 +46,11 @@ app.use('/api/orders',  ordersRoutes);
 app.use('/api/kitchen', kitchenRoutes);
 app.use('/api/history', historyRoutes);
 
+const { authenticate } = require('./middleware/auth');
+const { authorize } = require('./middleware/authorize');
+const ordersController = require('./controllers/orders.controller');
+app.get('/api/pedidos/atualizacoes', authenticate, authorize('admin', 'atendente', 'cozinha'), ordersController.getOrderUpdates);
+
 // ── 404 Handler ────────────────────────────────────────────────────────────
 app.use((req, res) => {
   res.status(404).json({ error: `Rota não encontrada: ${req.method} ${req.path}` });

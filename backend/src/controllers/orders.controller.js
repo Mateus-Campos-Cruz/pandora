@@ -455,6 +455,116 @@ async function updateOrderStatus(req, res) {
   }
 }
 
+/**
+ * GET /api/pedidos/atualizacoes?desde=<timestamp>
+ * Rota para polling do frontend
+ */
+async function getOrderUpdates(req, res) {
+  const { desde } = req.query;
+  const client = await db.getClient();
+  
+  try {
+    let query, params;
+    if (desde) {
+      query = `
+        SELECT
+         o.id, o.tipo, o.status,
+         o.mesa_id, t.numero AS mesa_numero,
+         c.nome AS cliente_nome, c.telefone AS cliente_telefone,
+         u.nome AS atendente_nome,
+         o.aberto_em, o.atualizado_em
+        FROM pedidos o
+        LEFT JOIN mesas t ON t.id = o.mesa_id
+        LEFT JOIN clientes c ON c.id = o.cliente_id
+        LEFT JOIN usuarios u ON u.id = o.atendente_id
+        WHERE o.atualizado_em > $1 AND o.status != 'encerrado'
+        ORDER BY o.atualizado_em ASC
+      `;
+      params = [desde];
+    } else {
+      query = `
+        SELECT
+         o.id, o.tipo, o.status,
+         o.mesa_id, t.numero AS mesa_numero,
+         c.nome AS cliente_nome, c.telefone AS cliente_telefone,
+         u.nome AS atendente_nome,
+         o.aberto_em, o.atualizado_em
+        FROM pedidos o
+        LEFT JOIN mesas t ON t.id = o.mesa_id
+        LEFT JOIN clientes c ON c.id = o.cliente_id
+        LEFT JOIN usuarios u ON u.id = o.atendente_id
+        WHERE o.status != 'encerrado'
+        ORDER BY o.atualizado_em ASC
+      `;
+      params = [];
+    }
+
+    const ordersResult = await client.query(query, params);
+    const pedidos = [];
+    
+    if (ordersResult.rows.length > 0) {
+      const orderIds = ordersResult.rows.map(r => r.id);
+      
+      const itemsResult = await client.query(`
+        SELECT oi.id, oi.pedido_id, mi.nome, oi.quantidade, oi.observacao, oi.cancelado, oi.preco_unitario
+        FROM pedido_itens oi
+        JOIN cardapio_itens mi ON mi.id = oi.cardapio_item_id
+        WHERE oi.pedido_id = ANY($1)
+        ORDER BY oi.adicionado_em ASC
+      `, [orderIds]);
+      
+      const itemsMap = {};
+      for (const item of itemsResult.rows) {
+        if (!itemsMap[item.pedido_id]) itemsMap[item.pedido_id] = [];
+        itemsMap[item.pedido_id].push({
+          id: item.id,
+          nome: item.nome,
+          quantidade: item.quantidade,
+          observacao: item.observacao,
+          preco_unitario: item.preco_unitario,
+          cancelado: item.cancelado
+        });
+      }
+      
+      for (const row of ordersResult.rows) {
+        pedidos.push({
+          id: row.id,
+          tipo: row.tipo,
+          status: row.status,
+          mesa_id: row.mesa_id,
+          mesa_numero: row.mesa_numero,
+          cliente_nome: row.cliente_nome,
+          cliente_telefone: row.cliente_telefone,
+          atendente_nome: row.atendente_nome,
+          aberto_em: row.aberto_em,
+          atualizado_em: row.atualizado_em,
+          itens: itemsMap[row.id] || []
+        });
+      }
+    }
+
+    const timeResult = await client.query(`SELECT NOW() AS current_time`);
+    const serverTimestamp = timeResult.rows[0].current_time;
+
+    await client.query(
+      `INSERT INTO audit_log (usuario_id, acao, detalhe) VALUES ($1, 'polling_pedidos', $2)`,
+      [req.user.id, desde ? `desde: ${desde}` : 'completo']
+    );
+
+    return res.json({
+      pedidos,
+      timestamp_servidor: serverTimestamp
+    });
+
+  } catch (err) {
+    console.error('[orders/getOrderUpdates]', err);
+    return res.status(500).json({ error: 'Erro ao buscar atualizações de pedidos.' });
+  } finally {
+    client.release();
+  }
+}
+
+
 module.exports = {
   listActiveOrders,
   getOrder,
@@ -462,4 +572,5 @@ module.exports = {
   addItem,
   updateItem,
   updateOrderStatus,
+  getOrderUpdates,
 };
