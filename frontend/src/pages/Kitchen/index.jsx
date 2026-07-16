@@ -41,13 +41,16 @@ export default function KitchenPage() {
           opened_at: p.aberto_em,
           table_identifier: p.mesa_numero,
           customer_name: p.cliente_nome,
-          items: p.itens.map(i => ({
-            id: i.id,
-            item_name: i.nome,
-            quantity: i.quantidade,
-            observation: i.observacao,
-            is_cancelled: i.cancelado
-          }))
+          items: p.itens
+            .filter(i => i.categoria !== 'bebida')
+            .map(i => ({
+              id: i.id,
+              item_name: i.nome,
+              category: i.categoria,
+              quantity: i.quantidade,
+              observation: i.observacao,
+              is_cancelled: i.cancelado
+            }))
         };
 
         const validStatuses = ['recebido', 'em_preparo', 'pronto'];
@@ -195,7 +198,7 @@ export default function KitchenPage() {
             const mins    = minutesSince(order.opened_at);
             const isLate  = mins > 30;
             const action  = statusNext[order.status];
-            const activeItems = (order.items || []).filter(i => !i.is_cancelled);
+            const activeItems = (order.items || []).filter(i => !i.is_cancelled && i.category !== 'bebida');
 
             let classes = `kitchen-card type-${order.type} status-${order.status}`;
             if (order.isNew) classes += ' anim-new-order';

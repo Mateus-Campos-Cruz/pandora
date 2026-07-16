@@ -519,7 +519,7 @@ async function getOrderUpdates(req, res) {
       const orderIds = ordersResult.rows.map(r => r.id);
       
       const itemsResult = await client.query(`
-        SELECT oi.id, oi.pedido_id, mi.nome, oi.quantidade, oi.observacao, oi.cancelado, oi.preco_unitario
+        SELECT oi.id, oi.pedido_id, mi.nome, mi.categoria, oi.quantidade, oi.observacao, oi.cancelado, oi.preco_unitario
         FROM pedido_itens oi
         JOIN cardapio_itens mi ON mi.id = oi.cardapio_item_id
         WHERE oi.pedido_id = ANY($1)
@@ -532,6 +532,7 @@ async function getOrderUpdates(req, res) {
         itemsMap[item.pedido_id].push({
           id: item.id,
           nome: item.nome,
+          categoria: item.categoria,
           quantidade: item.quantidade,
           observacao: item.observacao,
           preco_unitario: item.preco_unitario,

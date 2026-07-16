@@ -19,7 +19,7 @@ async function getKitchenQueue(req, res) {
              'observation', oi.observacao,
              'is_cancelled', oi.cancelado
            ) ORDER BY oi.adicionado_em ASC
-         ) FILTER (WHERE oi.id IS NOT NULL) as items
+         ) FILTER (WHERE oi.id IS NOT NULL AND mi.categoria != 'bebida') as items
        FROM pedidos o
        LEFT JOIN mesas t ON t.id = o.mesa_id
        LEFT JOIN clientes c ON c.id = o.cliente_id
