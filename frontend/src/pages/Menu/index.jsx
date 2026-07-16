@@ -22,6 +22,7 @@ export default function MenuPage() {
   const [editItem, setEditItem]   = useState(null);
   const [form, setForm]           = useState(EMPTY_FORM);
   const [saving, setSaving]       = useState(false);
+  const [toggling, setToggling]   = useState({});
   const { isAdmin } = useAuth();
 
   const fetchItems = useCallback(async () => {
@@ -65,11 +66,15 @@ export default function MenuPage() {
   };
 
   const toggleActive = async (item) => {
+    if (toggling[item.id]) return;
+    setToggling(t => ({ ...t, [item.id]: true }));
     try {
       await api.patch(`/menu/${item.id}`, { is_active: !item.is_active });
       fetchItems();
     } catch {
       alert('Erro ao alterar status do item.');
+    } finally {
+      setToggling(t => { const n = { ...t }; delete n[item.id]; return n; });
     }
   };
 
@@ -140,9 +145,10 @@ export default function MenuPage() {
                         <button
                           className={`btn btn-sm ${item.is_active ? 'btn-danger' : 'btn-secondary'}`}
                           onClick={() => toggleActive(item)}
+                          disabled={!!toggling[item.id]}
                           id={`btn-toggle-menu-${item.id}`}
                         >
-                          {item.is_active ? 'Desativar' : 'Ativar'}
+                          {toggling[item.id] ? '...' : item.is_active ? 'Desativar' : 'Ativar'}
                         </button>
                       </div>
                     </td>

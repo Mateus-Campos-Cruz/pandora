@@ -15,6 +15,7 @@ export default function UsersPage() {
   const [editUser, setEditUser]   = useState(null);
   const [form, setForm]           = useState(EMPTY_FORM);
   const [saving, setSaving]       = useState(false);
+  const [deleting, setDeleting]   = useState({});
   const { user: me } = useAuth();
 
   const fetchUsers = useCallback(async () => {
@@ -63,11 +64,14 @@ export default function UsersPage() {
 
   const handleDelete = async (u) => {
     if (!window.confirm(`Desativar ${u.name}?`)) return;
+    setDeleting(d => ({ ...d, [u.id]: true }));
     try {
       await api.delete(`/users/${u.id}`);
       fetchUsers();
     } catch (err) {
       alert(err.response?.data?.error || 'Erro ao desativar usuário.');
+    } finally {
+      setDeleting(d => { const n = { ...d }; delete n[u.id]; return n; });
     }
   };
 
@@ -130,8 +134,13 @@ export default function UsersPage() {
                     <div className="flex gap-1">
                       <button className="btn btn-ghost btn-sm" onClick={() => openEdit(u)} id={`btn-edit-user-${u.id}`}>✏️</button>
                       {u.id !== me?.id && (
-                        <button className="btn btn-danger btn-sm" onClick={() => handleDelete(u)} id={`btn-deactivate-user-${u.id}`}>
-                          Desativar
+                        <button
+                          className="btn btn-danger btn-sm"
+                          onClick={() => handleDelete(u)}
+                          disabled={!!deleting[u.id]}
+                          id={`btn-deactivate-user-${u.id}`}
+                        >
+                          {deleting[u.id] ? '...' : 'Desativar'}
                         </button>
                       )}
                     </div>
