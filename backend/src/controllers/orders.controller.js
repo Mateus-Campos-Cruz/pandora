@@ -409,6 +409,19 @@ async function updateOrderStatus(req, res) {
       });
     }
 
+    // Validação: ao iniciar preparo, o pedido precisa ter pelo menos 1 item ativo
+    if (order.status === 'recebido') {
+      const itemCheck = await db.query(
+        `SELECT COUNT(*) AS total FROM pedido_itens WHERE pedido_id = $1 AND cancelado = false`,
+        [id]
+      );
+      if (parseInt(itemCheck.rows[0].total, 10) === 0) {
+        return res.status(400).json({
+          error: 'Não é possível iniciar o preparo: o pedido não possui nenhum item.',
+        });
+      }
+    }
+
     const newStatus = transition.next;
 
     const client = await db.getClient();
