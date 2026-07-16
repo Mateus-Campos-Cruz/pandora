@@ -10,6 +10,7 @@ const navItems = [
   { to: '/kitchen', icon: '👨‍🍳', label: 'Cozinha',    roles: ['admin', 'cozinha'] },
   { to: '/menu',    icon: '🍽️', label: 'Cardápio',   roles: ['admin'] },
   { to: '/history', icon: '📁', label: 'Histórico',   roles: ['admin', 'atendente'] },
+  { to: '/finance', icon: '💰', label: 'Financeiro',  roles: ['admin'] },
   { to: '/users',   icon: '👥', label: 'Usuários',    roles: ['admin'] },
 ];
 

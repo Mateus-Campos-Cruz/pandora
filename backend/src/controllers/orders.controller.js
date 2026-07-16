@@ -375,7 +375,6 @@ async function updateOrderStatus(req, res) {
     recebido:   { next: 'em_preparo', roles: ['cozinha', 'admin'] },
     em_preparo: { next: 'pronto',     roles: ['cozinha', 'admin'] },
     pronto:     { next: 'entregue',   roles: ['atendente', 'admin'] },
-    entregue:   { next: 'encerrado',  roles: ['atendente', 'admin'] },
   };
 
   try {
@@ -576,6 +575,106 @@ async function getOrderUpdates(req, res) {
   }
 }
 
+/**
+ * POST /api/orders/:id/pay — Registrar pagamento e encerrar pedido
+ */
+async function payOrder(req, res) {
+  const { id } = req.params;
+  const { forma_pagamento, valor_recebido } = req.body;
+
+  if (!['dinheiro', 'pix', 'debito', 'credito'].includes(forma_pagamento)) {
+    return res.status(400).json({ error: 'Forma de pagamento inválida.' });
+  }
+
+  const valorRec = parseFloat(valor_recebido) || 0;
+  if (forma_pagamento === 'dinheiro' && valorRec <= 0) {
+    return res.status(400).json({ error: 'Valor recebido deve ser maior que 0 para pagamento em dinheiro.' });
+  }
+
+  const client = await db.getClient();
+  try {
+    await client.query('BEGIN');
+
+    // Buscar pedido para verificar status
+    const orderResult = await client.query(
+      `SELECT status, mesa_id FROM pedidos WHERE id = $1`,
+      [id]
+    );
+
+    if (orderResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Pedido não encontrado.' });
+    }
+
+    const order = orderResult.rows[0];
+    if (order.status !== 'entregue') {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'Pedido só pode ser pago/encerrado a partir do status entregue.' });
+    }
+
+    // Calcular total do pedido (ignorar cancelados)
+    const itemsResult = await client.query(
+      `SELECT SUM(quantidade * preco_unitario) as total
+       FROM pedido_itens 
+       WHERE pedido_id = $1 AND cancelado = false`,
+      [id]
+    );
+    
+    const valorTotal = parseFloat(itemsResult.rows[0].total) || 0;
+
+    let finalValorRecebido = valorRec;
+    let troco = 0;
+
+    if (forma_pagamento === 'dinheiro') {
+      if (finalValorRecebido < valorTotal) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Valor recebido menor que o total do pedido.' });
+      }
+      troco = finalValorRecebido - valorTotal;
+    } else {
+      finalValorRecebido = valorTotal; // Cartão/Pix sempre é exatamente o valor
+    }
+
+    // Registrar pagamento
+    await client.query(
+      `INSERT INTO pagamentos 
+        (pedido_id, forma_pagamento, valor_total, valor_recebido, troco, registrado_por)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [id, forma_pagamento, valorTotal, finalValorRecebido, troco, req.user.id]
+    );
+
+    // Atualizar status para encerrado
+    await client.query(
+      `UPDATE pedidos SET status = 'encerrado' WHERE id = $1`,
+      [id]
+    );
+
+    // Log de histórico de status
+    await client.query(
+      `INSERT INTO pedido_status_historico (pedido_id, status_anterior, status_novo, alterado_por)
+       VALUES ($1, 'entregue', 'encerrado', $2)`,
+      [id, req.user.id]
+    );
+
+    // Liberar mesa se salão
+    if (order.mesa_id) {
+      await client.query(
+        `UPDATE mesas SET status = 'livre' WHERE id = $1`,
+        [order.mesa_id]
+      );
+    }
+
+    await client.query('COMMIT');
+    
+    return res.status(200).json({ message: 'Pagamento registrado e pedido encerrado com sucesso.', troco });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('[orders/payOrder]', err);
+    return res.status(500).json({ error: 'Erro ao registrar pagamento.' });
+  } finally {
+    client.release();
+  }
+}
 
 module.exports = {
   listActiveOrders,
@@ -585,4 +684,5 @@ module.exports = {
   updateItem,
   updateOrderStatus,
   getOrderUpdates,
+  payOrder,
 };

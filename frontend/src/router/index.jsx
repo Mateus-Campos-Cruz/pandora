@@ -11,6 +11,7 @@ import NewOrderPage    from '../pages/NewOrder';
 import KitchenPage     from '../pages/Kitchen';
 import MenuPage        from '../pages/Menu';
 import HistoryPage     from '../pages/History';
+import FinancePage     from '../pages/Finance';
 import UsersPage       from '../pages/Users';
 
 const router = createHashRouter([
@@ -95,6 +96,14 @@ const router = createHashRouter([
         element: (
           <ProtectedRoute roles={['admin']}>
             <UsersPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'finance',
+        element: (
+          <ProtectedRoute roles={['admin']}>
+            <FinancePage />
           </ProtectedRoute>
         ),
       },

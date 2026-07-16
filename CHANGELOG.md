@@ -7,6 +7,15 @@ O formato segue: `[DATA] — Tipo: Descrição`.
 
 ## [2026-07-16] — Sessão de Melhorias e Correções
 
+### ✨ Melhorias
+
+- **[FEATURE] Módulo de Pagamento e Fechamento de Caixa (Melhoria 2)**
+  - Adicionadas rotas de API para registrar pagamento de pedidos e encerramento de caixa.
+  - O fechamento do pedido (status encerrado) agora é condicionado ao registro de um pagamento.
+  - Criação de modal de pagamento com cálculo de troco automático para a opção "dinheiro".
+  - Novo painel financeiro acessível apenas a Administradores para visualizar faturamento por forma de pagamento e canal de venda.
+  - Implementado log de auditoria e imutabilidade para registros financeiros via triggers no banco de dados Neon.
+
 ### 🐛 Correções de Bug
 
 - **[FIX] URL da API apontava para localhost em produção**

@@ -9,6 +9,7 @@ const {
   addItem,
   updateItem,
   updateOrderStatus,
+  payOrder,
 } = require('../controllers/orders.controller');
 
 router.use(authenticate);
@@ -20,5 +21,6 @@ router.post('/',                       authorize('admin', 'atendente'),         
 router.post('/:id/items',              authorize('admin', 'atendente'),          addItem);
 router.patch('/:id/items/:itemId',     authorize('admin', 'atendente'),          updateItem);
 router.patch('/:id/status',            authorize('admin', 'atendente', 'cozinha'), updateOrderStatus);
+router.post('/:id/pay',                authorize('admin', 'atendente'),          payOrder);
 
 module.exports = router;

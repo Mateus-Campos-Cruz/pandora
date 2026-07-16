@@ -38,6 +38,11 @@ export default function OrderDetailPage() {
   // Atualizar status
   const [advancingStatus, setAdvancingStatus] = useState(false);
 
+  // Modal: Pagamento
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentForm, setPaymentForm] = useState({ forma_pagamento: 'dinheiro', valor_recebido: '' });
+  const [processingPayment, setProcessingPayment] = useState(false);
+
   const fetchOrder = useCallback(async () => {
     try {
       const { data } = await api.get(`/orders/${id}`);
@@ -107,6 +112,11 @@ export default function OrderDetailPage() {
   };
 
   const handleAdvanceStatus = async () => {
+    if (order.status === 'entregue') {
+      setShowPaymentModal(true);
+      return;
+    }
+    
     if (!window.confirm(`Confirma avançar o status do pedido?`)) return;
     setAdvancingStatus(true);
     try {
@@ -116,6 +126,28 @@ export default function OrderDetailPage() {
       alert(err.response?.data?.error || 'Erro ao atualizar status.');
     } finally {
       setAdvancingStatus(false);
+    }
+  };
+
+  const handlePay = async (e) => {
+    e.preventDefault();
+    setProcessingPayment(true);
+    try {
+      const payload = {
+        forma_pagamento: paymentForm.forma_pagamento,
+      };
+      if (paymentForm.forma_pagamento === 'dinheiro') {
+        payload.valor_recebido = paymentForm.valor_recebido;
+      }
+      
+      const res = await api.post(`/orders/${id}/pay`, payload);
+      alert(`Pagamento registrado com sucesso! ${res.data.troco > 0 ? 'Troco: R$ ' + Number(res.data.troco).toFixed(2) : ''}`);
+      setShowPaymentModal(false);
+      fetchOrder();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Erro ao registrar pagamento.');
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -346,6 +378,57 @@ export default function OrderDetailPage() {
               required
             />
           </div>
+        </Modal>
+      )}
+
+      {/* Modal: Pagamento */}
+      {showPaymentModal && (
+        <Modal
+          title="Encerrar Pedido (Pagamento)"
+          onClose={() => setShowPaymentModal(false)}
+          footer={
+            <>
+              <button className="btn btn-secondary" onClick={() => setShowPaymentModal(false)} id="btn-cancel-pay">Cancelar</button>
+              <button className="btn btn-primary" onClick={handlePay} disabled={processingPayment} id="btn-save-pay">
+                {processingPayment ? 'Processando...' : 'Confirmar Pagamento'}
+              </button>
+            </>
+          }
+        >
+          <div className="alert alert-info" style={{ marginBottom: '16px' }}>
+            Valor Total do Pedido: <strong>R$ {total.toFixed(2)}</strong>
+          </div>
+
+          <div className="form-group" style={{ marginBottom: '12px' }}>
+            <label className="form-label" htmlFor="pay-method">Forma de Pagamento <span className="form-required">*</span></label>
+            <select
+              id="pay-method"
+              className="form-select"
+              value={paymentForm.forma_pagamento}
+              onChange={e => setPaymentForm(f => ({ ...f, forma_pagamento: e.target.value, valor_recebido: '' }))}
+            >
+              <option value="dinheiro">Dinheiro</option>
+              <option value="pix">Pix</option>
+              <option value="debito">Cartão de Débito</option>
+              <option value="credito">Cartão de Crédito</option>
+            </select>
+          </div>
+
+          {paymentForm.forma_pagamento === 'dinheiro' && (
+            <div className="form-group" style={{ marginBottom: '12px' }}>
+              <label className="form-label" htmlFor="pay-received">Valor Recebido (R$) <span className="form-required">*</span></label>
+              <input id="pay-received" type="number" min={total} step="0.01" className="form-input"
+                value={paymentForm.valor_recebido}
+                onChange={e => setPaymentForm(f => ({ ...f, valor_recebido: e.target.value }))}
+                placeholder={`Mínimo: R$ ${total.toFixed(2)}`} />
+                
+              {Number(paymentForm.valor_recebido) >= total && (
+                <div style={{ marginTop: '8px', color: 'var(--success)', fontWeight: 'bold' }}>
+                  Troco: R$ {(Number(paymentForm.valor_recebido) - total).toFixed(2)}
+                </div>
+              )}
+            </div>
+          )}
         </Modal>
       )}
     </div>
