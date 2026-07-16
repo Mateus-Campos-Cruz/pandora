@@ -546,10 +546,8 @@ async function getOrderUpdates(req, res) {
     const timeResult = await client.query(`SELECT NOW() AS current_time`);
     const serverTimestamp = timeResult.rows[0].current_time;
 
-    await client.query(
-      `INSERT INTO audit_log (usuario_id, acao, detalhe) VALUES ($1, 'polling_pedidos', $2)`,
-      [req.user.id, desde ? `desde: ${desde}` : 'completo']
-    );
+    // Polling não afeta um registro específico — omitimos o audit_log para não gerar erros
+    // (tabela_afetada e registro_id são NOT NULL e não fazem sentido para uma leitura)
 
     return res.json({
       pedidos,
