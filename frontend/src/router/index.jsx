@@ -13,6 +13,7 @@ import MenuPage        from '../pages/Menu';
 import HistoryPage     from '../pages/History';
 import FinancePage     from '../pages/Finance';
 import UsersPage       from '../pages/Users';
+import AnalyticsPage   from '../pages/Analytics';
 
 const router = createHashRouter([
   {
@@ -104,6 +105,14 @@ const router = createHashRouter([
         element: (
           <ProtectedRoute roles={['admin']}>
             <FinancePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'analytics',
+        element: (
+          <ProtectedRoute roles={['admin']}>
+            <AnalyticsPage />
           </ProtectedRoute>
         ),
       },

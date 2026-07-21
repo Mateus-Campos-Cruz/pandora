@@ -11,6 +11,7 @@ const menuRoutes    = require('./routes/menu.routes');
 const ordersRoutes  = require('./routes/orders.routes');
 const kitchenRoutes = require('./routes/kitchen.routes');
 const historyRoutes = require('./routes/history.routes');
+const analyticsRoutes = require('./routes/analytics.routes');
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use('/api/kitchen', kitchenRoutes);
 app.use('/api/history', historyRoutes);
 const financeRoutes = require('./routes/finance.routes');
 app.use('/api/finance', financeRoutes);
+app.use('/api/analytics', analyticsRoutes);
 const { authenticate } = require('./middleware/auth');
 const { authorize } = require('./middleware/authorize');
 const ordersController = require('./controllers/orders.controller');
