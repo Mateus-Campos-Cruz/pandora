@@ -16,6 +16,13 @@ export default function AnalyticsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -144,10 +151,10 @@ export default function AnalyticsPage() {
               <h3>🏆 Top 10 Itens Mais Pedidos</h3>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.topItems} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={data.topItems} layout="vertical" margin={isMobile ? { top: 2, right: 10, left: 0, bottom: 2 } : { top: 5, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis type="number" />
-                    <YAxis dataKey="nome" type="category" width={120} tick={{ fontSize: 12 }} />
+                    <XAxis type="number" tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <YAxis dataKey="nome" type="category" width={isMobile ? 70 : 120} tick={{ fontSize: isMobile ? 9 : 12 }} />
                     <RechartsTooltip />
                     <Bar dataKey="total_vendido" fill="#3b82f6" name="Qtd Vendida" />
                   </BarChart>
@@ -160,14 +167,14 @@ export default function AnalyticsPage() {
               <h3>📦 Volume (Salão vs Delivery)</h3>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
+                  <PieChart margin={isMobile ? { top: 0, right: 0, left: 0, bottom: 0 } : undefined}>
                     <Pie
                       data={data.salesComparison}
                       cx="50%"
                       cy="50%"
-                      labelLine={true}
-                      label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                      outerRadius={100}
+                      labelLine={!isMobile}
+                      label={isMobile ? false : ({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                      outerRadius={isMobile ? 55 : 100}
                       fill="#8884d8"
                       dataKey="total_pedidos"
                       nameKey="tipo"
@@ -188,10 +195,10 @@ export default function AnalyticsPage() {
               <h3>⏱️ Tempo Médio de Preparo</h3>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.prepTime} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={data.prepTime} margin={isMobile ? { top: 5, right: 8, left: 0, bottom: 5 } : { top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="categoria" />
-                    <YAxis label={{ value: 'Minutos', angle: -90, position: 'insideLeft' }} />
+                    <XAxis dataKey="categoria" tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <YAxis label={isMobile ? null : { value: 'Minutos', angle: -90, position: 'insideLeft' }} tick={{ fontSize: isMobile ? 10 : 12 }} width={isMobile ? 30 : 60} />
                     <RechartsTooltip formatter={(value) => `${Number(value).toFixed(1)} min`} />
                     <Bar dataKey="media_preparo_minutos" fill="#f59e0b" name="Média (Min)" />
                   </BarChart>
@@ -204,10 +211,10 @@ export default function AnalyticsPage() {
               <h3>💳 Faturamento por Pagamento</h3>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data.revenueByMethod} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <BarChart data={data.revenueByMethod} margin={isMobile ? { top: 5, right: 8, left: 0, bottom: 5 } : { top: 20, right: 30, left: 20, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="forma_pagamento" />
-                    <YAxis />
+                    <XAxis dataKey="forma_pagamento" tick={{ fontSize: isMobile ? 10 : 12 }} />
+                    <YAxis tick={{ fontSize: isMobile ? 10 : 12 }} width={isMobile ? 30 : 60} />
                     <RechartsTooltip formatter={(value) => formatCurrency(value)} />
                     <Bar dataKey="faturamento" fill="#10b981" name="Faturamento" />
                   </BarChart>
