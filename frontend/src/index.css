@@ -304,6 +304,33 @@ ul, ol { list-style: none; }
   animation: fadeIn 200ms ease;
 }
 
+/* ── Botão fechar (X) — fixo no canto superior direito do drawer ── */
+.sidebar-close-btn {
+  display: none; /* ativado no breakpoint mobile */
+  position: fixed;
+  top: 12px;
+  left: 218px; /* 260px sidebar - 34px botão - 8px margem */
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  color: #FDF6EC;
+  font-size: 18px;
+  font-weight: 400;
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+  z-index: 200;
+}
+
+.sidebar-close-btn:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+
+
 /* ── Header ─────────────────────────────────────────────────── */
 .page-header {
   display: flex;
@@ -1085,6 +1112,11 @@ tbody td {
 
   /* Exibe o botão hamburguer */
   .sidebar-toggle {
+    display: flex;
+  }
+
+  /* Exibe o botão X (fechar) fixo no canto direito do drawer */
+  .sidebar-close-btn {
     display: flex;
   }
 

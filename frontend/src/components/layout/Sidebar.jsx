@@ -27,9 +27,6 @@ export default function Sidebar() {
     setIsOpen(false);
   }, [location.pathname]);
 
-  // Fecha o menu ao clicar fora (overlay)
-  const handleOverlayClick = () => setIsOpen(false);
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -39,26 +36,39 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* ── Botão hamburguer (mobile/tablet) ──────────────────── */}
-      <button
-        className="sidebar-toggle"
-        onClick={() => setIsOpen(prev => !prev)}
-        aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
-        aria-expanded={isOpen}
-        id="btn-sidebar-toggle"
-      >
-        <span className={`hamburger-icon ${isOpen ? 'open' : ''}`}>
-          <span />
-          <span />
-          <span />
-        </span>
-      </button>
+      {/* ── Botão hamburguer fixo — só visível no mobile/tablet ── */}
+      {!isOpen && (
+        <button
+          className="sidebar-toggle"
+          onClick={() => setIsOpen(true)}
+          aria-label="Abrir menu"
+          id="btn-sidebar-toggle"
+        >
+          <span className="hamburger-icon">
+            <span />
+            <span />
+            <span />
+          </span>
+        </button>
+      )}
 
-      {/* ── Overlay escuro (mobile/tablet) ───────────────────── */}
+      {/* ── Botão X fixo — canto sup. direito DO DRAWER ────────── */}
+      {isOpen && (
+        <button
+          className="sidebar-close-btn"
+          onClick={() => setIsOpen(false)}
+          aria-label="Fechar menu"
+          id="btn-sidebar-close"
+        >
+          ✕
+        </button>
+      )}
+
+      {/* ── Overlay escuro ────────────────────────────────────── */}
       {isOpen && (
         <div
           className="sidebar-overlay"
-          onClick={handleOverlayClick}
+          onClick={() => setIsOpen(false)}
           aria-hidden="true"
         />
       )}
