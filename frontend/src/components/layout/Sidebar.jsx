@@ -12,7 +12,7 @@ const navItems = [
   { to: '/menu',      icon: '🍽️', label: 'Cardápio',   roles: ['admin'] },
   { to: '/history',   icon: '📁', label: 'Histórico',   roles: ['admin', 'atendente'] },
   { to: '/finance',   icon: '💰', label: 'Financeiro',  roles: ['admin'] },
-  { to: '/analytics', icon: '📈', label: 'Desempenho',  roles: ['admin'] },
+  // { to: '/analytics', icon: '📈', label: 'Desempenho',  roles: ['admin'] }, // temporariamente desabilitado
   { to: '/users',     icon: '👥', label: 'Usuários',    roles: ['admin'] },
 ];
 
