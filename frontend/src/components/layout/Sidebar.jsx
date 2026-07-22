@@ -1,23 +1,34 @@
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 const roleLabel = { admin: 'Administrador', atendente: 'Atendente', cozinha: 'Cozinha' };
 
 const navItems = [
-  { to: '/',        icon: '📊', label: 'Dashboard',  roles: ['admin', 'atendente'] },
-  { to: '/tables',  icon: '🪑', label: 'Mesas',       roles: ['admin', 'atendente'] },
-  { to: '/orders',  icon: '📋', label: 'Pedidos',     roles: ['admin', 'atendente'] },
-  { to: '/kitchen', icon: '👨‍🍳', label: 'Cozinha',    roles: ['admin', 'cozinha'] },
-  { to: '/menu',    icon: '🍽️', label: 'Cardápio',   roles: ['admin'] },
-  { to: '/history', icon: '📁', label: 'Histórico',   roles: ['admin', 'atendente'] },
-  { to: '/finance', icon: '💰', label: 'Financeiro',  roles: ['admin'] },
-  { to: '/analytics', icon: '📈', label: 'Desempenho', roles: ['admin'] },
-  { to: '/users',   icon: '👥', label: 'Usuários',    roles: ['admin'] },
+  { to: '/',          icon: '📊', label: 'Dashboard',  roles: ['admin', 'atendente'] },
+  { to: '/tables',    icon: '🪑', label: 'Mesas',       roles: ['admin', 'atendente'] },
+  { to: '/orders',    icon: '📋', label: 'Pedidos',     roles: ['admin', 'atendente'] },
+  { to: '/kitchen',   icon: '👨‍🍳', label: 'Cozinha',    roles: ['admin', 'cozinha'] },
+  { to: '/menu',      icon: '🍽️', label: 'Cardápio',   roles: ['admin'] },
+  { to: '/history',   icon: '📁', label: 'Histórico',   roles: ['admin', 'atendente'] },
+  { to: '/finance',   icon: '💰', label: 'Financeiro',  roles: ['admin'] },
+  { to: '/analytics', icon: '📈', label: 'Desempenho',  roles: ['admin'] },
+  { to: '/users',     icon: '👥', label: 'Usuários',    roles: ['admin'] },
 ];
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Fecha o menu ao trocar de página no mobile
+  useEffect(() => {
+    setIsOpen(false);
+  }, [location.pathname]);
+
+  // Fecha o menu ao clicar fora (overlay)
+  const handleOverlayClick = () => setIsOpen(false);
 
   const handleLogout = () => {
     logout();
@@ -27,49 +38,76 @@ export default function Sidebar() {
   const visibleItems = navItems.filter(item => item.roles.includes(user?.role));
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-logo">
-        <h1>🍽️ Pandora</h1>
-        <p>Gestão de Pedidos</p>
-      </div>
+    <>
+      {/* ── Botão hamburguer (mobile/tablet) ──────────────────── */}
+      <button
+        className="sidebar-toggle"
+        onClick={() => setIsOpen(prev => !prev)}
+        aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
+        aria-expanded={isOpen}
+        id="btn-sidebar-toggle"
+      >
+        <span className={`hamburger-icon ${isOpen ? 'open' : ''}`}>
+          <span />
+          <span />
+          <span />
+        </span>
+      </button>
 
-      <nav className="sidebar-nav" role="navigation" aria-label="Menu principal">
-        {visibleItems.map(item => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
-            className={({ isActive }) =>
-              `sidebar-nav-item ${isActive ? 'active' : ''}`
-            }
-            aria-label={item.label}
-          >
-            <span className="nav-icon" aria-hidden="true">{item.icon}</span>
-            <span>{item.label}</span>
-          </NavLink>
-        ))}
-      </nav>
+      {/* ── Overlay escuro (mobile/tablet) ───────────────────── */}
+      {isOpen && (
+        <div
+          className="sidebar-overlay"
+          onClick={handleOverlayClick}
+          aria-hidden="true"
+        />
+      )}
 
-      <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="sidebar-user-avatar" aria-hidden="true">
-            {user?.name?.charAt(0).toUpperCase()}
-          </div>
-          <div className="sidebar-user-info min-w-0">
-            <div className="sidebar-user-name truncate">{user?.name}</div>
-            <div className="sidebar-user-role">{roleLabel[user?.role]}</div>
-          </div>
-          <button
-            className="logout-btn"
-            onClick={handleLogout}
-            title="Sair do sistema"
-            aria-label="Sair do sistema"
-            id="btn-logout"
-          >
-            ↩
-          </button>
+      {/* ── Sidebar ─────────────────────────────────────────── */}
+      <aside className={`sidebar ${isOpen ? 'sidebar-open' : ''}`}>
+        <div className="sidebar-logo">
+          <h1>🍽️ Pandora</h1>
+          <p>Gestão de Pedidos</p>
         </div>
-      </div>
-    </aside>
+
+        <nav className="sidebar-nav" role="navigation" aria-label="Menu principal">
+          {visibleItems.map(item => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.to === '/'}
+              className={({ isActive }) =>
+                `sidebar-nav-item ${isActive ? 'active' : ''}`
+              }
+              aria-label={item.label}
+            >
+              <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+              <span>{item.label}</span>
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <div className="sidebar-user">
+            <div className="sidebar-user-avatar" aria-hidden="true">
+              {user?.name?.charAt(0).toUpperCase()}
+            </div>
+            <div className="sidebar-user-info min-w-0">
+              <div className="sidebar-user-name truncate">{user?.name}</div>
+              <div className="sidebar-user-role">{roleLabel[user?.role]}</div>
+            </div>
+            <button
+              className="logout-btn"
+              onClick={handleLogout}
+              title="Sair do sistema"
+              aria-label="Sair do sistema"
+              id="btn-logout"
+            >
+              ↩
+            </button>
+          </div>
+        </div>
+      </aside>
+    </>
   );
 }

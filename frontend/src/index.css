@@ -247,6 +247,63 @@ ul, ol { list-style: none; }
 }
 .logout-btn:hover { color: var(--danger); }
 
+/* ── Hamburguer Toggle (mobile/tablet) ──────────────────────── */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 200;
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius);
+  background: var(--bg-2);
+  box-shadow: var(--shadow);
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.hamburger-icon {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 20px;
+}
+
+.hamburger-icon span {
+  display: block;
+  height: 2px;
+  background: #FDF6EC;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+/* Animação X quando aberto */
+.hamburger-icon.open span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+.hamburger-icon.open span:nth-child(2) {
+  opacity: 0;
+  transform: scaleX(0);
+}
+.hamburger-icon.open span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ── Overlay escuro (mobile/tablet) ─────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 98;
+  animation: fadeIn 200ms ease;
+}
+
 /* ── Header ─────────────────────────────────────────────────── */
 .page-header {
   display: flex;
@@ -802,6 +859,12 @@ tbody td {
   padding: 20px;
 }
 
+@media (max-width: 900px) {
+  .kitchen-page {
+    padding: 12px;
+  }
+}
+
 .kitchen-header {
   display: flex;
   align-items: center;
@@ -994,27 +1057,136 @@ tbody td {
 }
 
 /* ── Responsividade ──────────────────────────────────────────── */
+
+/* Tablet e Mobile: sidebar vira drawer */
 @media (max-width: 900px) {
   :root { --sidebar-w: 0px; }
-  .app-main { margin-left: 0; }
-  .sidebar { display: none; }
+
+  /* Conteúdo principal ocupa a tela toda */
+  .app-main {
+    margin-left: 0;
+    padding-top: 62px; /* espaço para o botão hamburguer fixo */
+  }
+
+  /* Sidebar vira drawer oculto à esquerda */
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 99;
+    width: 260px;
+    display: flex; /* mantém visível mas fora da tela */
+  }
+
+  /* Sidebar aberto: desliza para dentro */
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 40px rgba(0,0,0,0.35);
+  }
+
+  /* Exibe o botão hamburguer */
+  .sidebar-toggle {
+    display: flex;
+  }
+
+  /* Exibe overlay quando sidebar está aberto */
+  .sidebar-open ~ .sidebar-overlay,
+  .sidebar-overlay {
+    display: block;
+  }
+
+  /* Grids adaptados para tablet */
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .form-grid-3 { grid-template-columns: 1fr; }
-}
+  .form-grid-3 { grid-template-columns: 1fr 1fr; }
 
-@media (max-width: 600px) {
-  .page-content { padding: 16px; }
-  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
-  .form-grid-2 { grid-template-columns: 1fr; }
-  .login-card { padding: 28px 20px; }
-  .modal { border-radius: var(--radius-lg); }
-  .kitchen-grid { grid-template-columns: 1fr; }
-}
+  /* Page header empilha verticalmente */
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 
-/* ── Tablet 7" (portrait ~600px) ─────────────────────────────── */
-@media (min-width: 600px) and (max-width: 900px) {
-  .btn { min-height: 44px; font-size: 15px; }
-  .form-input, .form-select { min-height: 44px; font-size: 15px; }
+  /* Botões maiores para toque */
+  .btn { min-height: 44px; }
+  .form-input, .form-select, .form-textarea { min-height: 44px; font-size: 15px; }
+
+  /* Kitchen grid 2 colunas no tablet */
   .kitchen-grid { grid-template-columns: repeat(2, 1fr); }
+
+  /* Table overflow em tabelas */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Modal ocupa mais espaço */
+  .modal {
+    max-width: 95vw;
+    max-height: 95vh;
+  }
+
+  /* Analytics grid tablet */
+  .analytics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-cards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Mobile pequeno (até 600px) */
+@media (max-width: 600px) {
+  .page-content { padding: 14px; }
+
+  /* Grids coluna única */
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  .form-grid-2, .form-grid-3 { grid-template-columns: 1fr; }
+
+  /* Login card menor */
+  .login-card { padding: 24px 18px; }
+  .login-logo h1 { font-size: 24px; }
+
+  /* Modal tela cheia no mobile */
+  .modal-overlay { padding: 0; align-items: flex-end; }
+  .modal {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-width: 100%;
+    max-height: 92vh;
+  }
+
+  /* Kitchen 1 coluna */
+  .kitchen-grid { grid-template-columns: 1fr; }
+  .kitchen-title { font-size: 18px; }
+
+  /* Stat cards menores */
+  .stat-value { font-size: 22px; }
+  .stat-icon { width: 40px; height: 40px; font-size: 18px; }
+
+  /* Page header */
+  .page-header-left h2 { font-size: 18px; }
+
+  /* Analytics KPIs 1 coluna */
+  .kpi-cards { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+
+  /* Tables em mobile: fonte menor */
+  tbody td { font-size: 12px; padding: 10px 10px; }
+  thead th { padding: 10px; font-size: 10px; }
+
+  /* Sidebar um pouco mais larga para toque */
+  .sidebar { width: 280px; }
+
+  /* Botões de ação maiores */
+  .btn { min-height: 46px; }
+  .btn-sm { min-height: 36px; font-size: 13px; }
+
+  /* Modal footer empilha botões */
+  .modal-footer { flex-direction: column-reverse; }
+  .modal-footer .btn { width: 100%; justify-content: center; }
+
+  /* Hamburguer mais alto para não cobrir conteúdo */
+  .app-main { padding-top: 66px; }
+
+  /* Finance/History page adjustments */
+  .form-grid { gap: 12px; }
 }
