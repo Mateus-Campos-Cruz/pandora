@@ -2,8 +2,6 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
-  overflow-x: hidden;
-  max-width: 100%;
 }
 
 .analytics-header {
@@ -72,7 +70,6 @@
   gap: 16px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease;
-  overflow: hidden;
   min-width: 0;
 }
 
@@ -92,7 +89,9 @@
 
 .chart-container {
   width: 100%;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .table-container {
