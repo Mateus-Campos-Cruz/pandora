@@ -56,7 +56,7 @@
 
 .analytics-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 24px;
 }
 
@@ -151,7 +151,93 @@
 }
 
 @media (max-width: 768px) {
+  .analytics-dashboard {
+    gap: 12px;
+  }
+
+  .analytics-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .analytics-header h2 {
+    font-size: 1.1rem;
+  }
+
+  .analytics-header p {
+    font-size: 0.8rem;
+    margin: 0;
+  }
+
+  .filters-group {
+    gap: 6px;
+    width: 100%;
+  }
+
+  .filter-btn {
+    padding: 6px 10px;
+    font-size: 0.8rem;
+  }
+
+  .custom-date-filter {
+    flex-wrap: wrap;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .custom-date-filter input {
+    font-size: 0.8rem;
+    padding: 4px 8px;
+    flex: 1;
+  }
+
+  .export-btn {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+  }
+
+  .kpi-cards {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .kpi-card {
+    padding: 12px;
+    gap: 4px;
+  }
+
+  .kpi-label {
+    font-size: 0.75rem;
+  }
+
+  .kpi-value {
+    font-size: 1.3rem;
+  }
+
   .analytics-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .analytics-card {
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .analytics-card h3 {
+    font-size: 0.95rem;
+  }
+
+  .chart-container {
+    height: 200px;
+    min-height: 200px;
+  }
+
+  .analytics-table th,
+  .analytics-table td {
+    padding: 8px 6px;
+    font-size: 0.8rem;
   }
 }
