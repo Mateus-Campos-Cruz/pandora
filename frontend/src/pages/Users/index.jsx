@@ -97,7 +97,7 @@ export default function UsersPage() {
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>Email</th>
+                <th className="hide-mobile">Email</th>
                 <th>Perfil</th>
                 <th>Status</th>
                 <th>Ações</th>
@@ -119,7 +119,7 @@ export default function UsersPage() {
                       {u.id === me?.id && <span style={{ fontSize: '10px', color: 'var(--primary)', fontWeight: '700' }}>VOCÊ</span>}
                     </div>
                   </td>
-                  <td style={{ color: 'var(--text-muted)', fontSize: '13px' }}>{u.email}</td>
+                  <td style={{ color: 'var(--text-muted)', fontSize: '13px' }} className="hide-mobile">{u.email}</td>
                   <td>
                     <span className="badge" style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}>
                       {roleLabels[u.role] || u.role}

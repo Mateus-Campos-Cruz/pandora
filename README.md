@@ -29,8 +29,7 @@ pandora/
 ### 2. Backend
 ```bash
 cd backend
-cp .env.example .env
-# Edite .env com suas credenciais
+# Crie o arquivo .env com as variáveis necessárias (veja a seção Deploy)
 npm install
 npm run dev          # http://localhost:3001
 ```
@@ -38,8 +37,7 @@ npm run dev          # http://localhost:3001
 ### 3. Frontend
 ```bash
 cd frontend
-cp .env.example .env
-# Edite VITE_API_URL se necessário
+# Crie o arquivo .env com: VITE_API_URL=http://localhost:3001/api
 npm install
 npm run dev          # http://localhost:5173
 ```
@@ -112,7 +110,13 @@ npm run test:integration
 1. Crie um Web Service no Render
 2. Build Command: `npm install`
 3. Start Command: `node server.js`
-4. Adicione as variáveis de ambiente do `.env.example`
+4. Adicione as variáveis de ambiente:
+   - `NODE_ENV=production`
+   - `PORT=3001`
+   - `DATABASE_URL=postgresql://USER:PASSWORD@HOST/DATABASE?sslmode=require`
+   - `JWT_SECRET=<chave_secreta_longa>`
+   - `JWT_EXPIRES_IN=8h`
+   - `CORS_ORIGIN=<url_do_vercel>`
 
 ### Frontend → Vercel
 1. Conecte o repositório ao Vercel

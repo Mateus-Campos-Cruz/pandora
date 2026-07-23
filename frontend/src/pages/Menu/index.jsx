@@ -114,7 +114,7 @@ export default function MenuPage() {
             <thead>
               <tr>
                 <th>Nome</th>
-                <th>Categoria</th>
+                <th className="hide-mobile">Categoria</th>
                 <th>Preço</th>
                 <th>Status</th>
                 {isAdmin && <th>Ações</th>}
@@ -127,7 +127,7 @@ export default function MenuPage() {
                     <div style={{ fontWeight: '600' }}>{item.name}</div>
                     {item.description && <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{item.description}</div>}
                   </td>
-                  <td>
+                  <td className="hide-mobile">
                     <span className="badge" style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}>
                       {categories.find(c => c.key === item.category)?.label || item.category}
                     </span>

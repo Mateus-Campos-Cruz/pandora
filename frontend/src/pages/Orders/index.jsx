@@ -150,7 +150,7 @@ export default function OrdersPage() {
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-2 flex-wrap" style={{ marginBottom: '20px' }}>
+      <div className="flex gap-2 flex-wrap filters-bar" style={{ marginBottom: '20px' }}>
         {[
           { key: 'all',      label: 'Todos' },
           { key: 'salao',    label: '🪑 Salão' },
@@ -192,7 +192,7 @@ export default function OrdersPage() {
                 <th>Total</th>
                 <th>Status</th>
                 <th>Tempo</th>
-                <th>Atendente</th>
+                <th className="hide-mobile">Atendente</th>
                 <th></th>
               </tr>
             </thead>
@@ -232,7 +232,7 @@ export default function OrdersPage() {
                         {formatDistanceToNow(new Date(order.opened_at), { locale: ptBR })} {isLate && '⚠️'}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{order.attendant_name || '—'}</td>
+                    <td style={{ color: 'var(--text-muted)', fontSize: '12px' }} className="hide-mobile">{order.attendant_name || '—'}</td>
                     <td>
                       <button
                         className="btn btn-ghost btn-sm"

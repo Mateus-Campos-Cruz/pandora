@@ -520,10 +520,10 @@ ul, ol { list-style: none; }
 
 /* ── Grid Layouts ─────────────────────────────────────────────── */
 .grid { display: grid; gap: 16px; }
-.grid-2 { grid-template-columns: repeat(2, 1fr); }
-.grid-3 { grid-template-columns: repeat(3, 1fr); }
-.grid-4 { grid-template-columns: repeat(4, 1fr); }
-.grid-auto { grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+.grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(2, 1fr); }
+.grid-3 { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); }
+.grid-4 { display: grid; gap: 16px; grid-template-columns: repeat(4, 1fr); }
+.grid-auto { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 
 /* ── Tabela ──────────────────────────────────────────────────── */
 .table-container {
@@ -1014,6 +1014,10 @@ tbody td {
 .flex-wrap { flex-wrap: wrap; }
 .min-w-0 { min-width: 0; }
 
+/* Responsividade: visibilidade */
+.hide-mobile  { /* visível por padrão, oculto em mobile  */ }
+.hide-tablet  { /* visível por padrão, oculto em tablet  */ }
+
 .mt-1 { margin-top: 4px; }
 .mt-2 { margin-top: 8px; }
 .mt-4 { margin-top: 16px; }
@@ -1163,6 +1167,12 @@ tbody td {
   .kpi-cards {
     grid-template-columns: repeat(2, 1fr);
   }
+
+  /* Ocultar colunas menos importantes em tablet */
+  .hide-tablet { display: none !important; }
+
+  /* Finance grids em tablet */
+  .grid-2 { grid-template-columns: 1fr; }
 }
 
 /* Mobile pequeno (até 600px) */
@@ -1220,4 +1230,17 @@ tbody td {
 
   /* Finance/History page adjustments */
   .form-grid { gap: 12px; }
+
+  /* Ocultar colunas menos importantes em mobile */
+  .hide-mobile { display: none !important; }
+
+  /* Finance: botão fechar caixa largura total */
+  .btn-lg { width: 100%; justify-content: center; }
+
+  /* NewOrder: card largura total */
+  .card[style*="maxWidth"] { max-width: 100% !important; }
+
+  /* Filtros de pedido/histórico em wrap */
+  .filters-bar { gap: 6px; }
+  .filters-bar .btn-sm { flex: 1; justify-content: center; min-width: 70px; }
 }

@@ -61,7 +61,7 @@ export default function FinancePage() {
           <h2>💰 Fechamento de Caixa</h2>
           <p>Resumo financeiro e encerramento do dia</p>
         </div>
-        <div className="flex gap-4 items-center">
+        <div className="flex gap-4 items-center flex-wrap">
           <input
             type="date"
             className="form-input"
@@ -84,7 +84,7 @@ export default function FinancePage() {
             </div>
           )}
 
-          <div className="grid-3" style={{ marginBottom: '24px' }}>
+          <div className="grid grid-3" style={{ marginBottom: '24px' }}>
             <div className="card">
               <div style={{ color: 'var(--text-muted)', fontSize: '13px', fontWeight: 'bold' }}>TOTAL GERAL</div>
               <div style={{ fontSize: '28px', fontWeight: '800', marginTop: '8px', color: 'var(--success)' }}>
@@ -110,7 +110,7 @@ export default function FinancePage() {
             )}
           </div>
 
-          <div className="grid-2" style={{ marginBottom: '24px' }}>
+          <div className="grid grid-2" style={{ marginBottom: '24px' }}>
             <div className="card">
               <h3 style={{ borderBottom: '1px solid var(--border)', paddingBottom: '12px', marginBottom: '12px' }}>Por Forma de Pagamento</h3>
               
@@ -148,12 +148,11 @@ export default function FinancePage() {
           </div>
 
           {!data.alreadyClosed && (
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <button
                 className="btn btn-primary btn-lg"
                 onClick={handleCloseRegister}
                 disabled={closing}
-                style={{ padding: '12px 32px', fontSize: '16px' }}
               >
                 {closing ? 'Fechando Caixa...' : 'Bloquear e Fechar Caixa do Dia'}
               </button>

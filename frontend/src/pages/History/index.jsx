@@ -101,8 +101,8 @@ export default function HistoryPage() {
                   <th>Total</th>
                   <th>Status</th>
                   <th>Abertura</th>
-                  <th>Encerramento</th>
-                  <th>Atendente</th>
+                  <th className="hide-mobile">Encerramento</th>
+                  <th className="hide-mobile">Atendente</th>
                 </tr>
               </thead>
               <tbody>
@@ -123,10 +123,10 @@ export default function HistoryPage() {
                     <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
                       {format(new Date(order.opened_at), "dd/MM/yy HH:mm", { locale: ptBR })}
                     </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                    <td style={{ fontSize: '12px', color: 'var(--text-muted)' }} className="hide-mobile">
                       {order.closed_at ? format(new Date(order.closed_at), "dd/MM/yy HH:mm", { locale: ptBR }) : '—'}
                     </td>
-                    <td style={{ fontSize: '12px' }}>{order.attendant_name}</td>
+                    <td style={{ fontSize: '12px' }} className="hide-mobile">{order.attendant_name}</td>
                   </tr>
                 ))}
               </tbody>
